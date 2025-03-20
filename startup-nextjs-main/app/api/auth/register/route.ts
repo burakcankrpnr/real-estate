@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { dbConnect } from "@/app/lib/dbConnect";
 import { User } from "@/app/models/User";
+import Link from "next/link";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+    title: "Giriş Yap | Emlak Platformu",
+    description: "Giriş yapın ve daha hızlı bilgi alın.",
+    // other metadata
+  };
 
 export async function POST(request: NextRequest) {
   try {

@@ -15,8 +15,6 @@ export async function POST(request: NextRequest) {
     }
 
     await dbConnect();
-
-    // Email’e göre kullanıcı bul
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
@@ -25,7 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Şifre doğru mu kontrol et
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json(
@@ -34,8 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Burada session veya JWT oluşturulabilir
-    // Örnek olsun diye basit bir başarı cevabı dönelim
     return NextResponse.json(
       {
         message: "Giriş başarılı!",

@@ -6,14 +6,51 @@ import { useEffect, useState } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 
+interface User {
+  name: string;
+  email: string;
+}
+
 const Header = () => {
-  // Navbar toggle
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleUserChange = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
+      }
+    };
+  
+    window.addEventListener("userChanged", handleUserChange);
+    return () => window.removeEventListener("userChanged", handleUserChange);
+  }, []);
+  
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.dispatchEvent(new Event("userChanged"));
+    closeLogoutModal();
+  };
+
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const openLogoutModal = () => setShowLogoutModal(true);
+  const closeLogoutModal = () => setShowLogoutModal(false);
+
   const [navbarOpen, setNavbarOpen] = useState(false);
   const navbarToggleHandler = () => {
     setNavbarOpen(!navbarOpen);
   };
 
-  // Sticky Navbar
   const [sticky, setSticky] = useState(false);
   const handleStickyNavbar = () => {
     if (window.scrollY >= 80) {
@@ -24,19 +61,22 @@ const Header = () => {
   };
   useEffect(() => {
     window.addEventListener("scroll", handleStickyNavbar);
-  });
+    return () => window.removeEventListener("scroll", handleStickyNavbar);
+  }, []);
 
-  // submenu handler
+  // Submenu handler
   const [openIndex, setOpenIndex] = useState(-1);
-  const handleSubmenu = (index) => {
-    if (openIndex === index) {
-      setOpenIndex(-1);
-    } else {
-      setOpenIndex(index);
-    }
+  const handleSubmenu = (index: number) => {
+    setOpenIndex(openIndex === index ? -1 : index);
   };
 
-  const usePathName = usePathname();
+  const pathName = usePathname();
+
+  // Yardımcı: Kullanıcı adının baş harflerini alır.
+  const getInitials = (name: string) => {
+    const parts = name.split(" ");
+    return parts.map((part) => part.charAt(0).toUpperCase()).join("");
+  };
 
   return (
     <>
@@ -49,12 +89,11 @@ const Header = () => {
       >
         <div className="container">
           <div className="relative -mx-4 flex items-center justify-between">
+            {/* Logo */}
             <div className="w-60 max-w-full px-4 xl:mr-12">
               <Link
                 href="/"
-                className={`header-logo block w-full ${
-                  sticky ? "py-5 lg:py-2" : "py-8"
-                } `}
+                className={`header-logo block w-full ${sticky ? "py-5 lg:py-2" : "py-8"}`}
               >
                 <Image
                   src="/images/logo/logo-2.svg"
@@ -72,6 +111,7 @@ const Header = () => {
                 />
               </Link>
             </div>
+            {/* Navigation */}
             <div className="flex w-full items-center justify-between px-4">
               <div>
                 <button
@@ -82,17 +122,17 @@ const Header = () => {
                 >
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? " top-[7px] rotate-45" : " "
+                      navbarOpen ? "top-[7px] rotate-45" : ""
                     }`}
                   />
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "opacity-0 " : " "
+                      navbarOpen ? "opacity-0" : ""
                     }`}
                   />
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? " top-[-8px] -rotate-45" : " "
+                      navbarOpen ? "top-[-8px] -rotate-45" : ""
                     }`}
                   />
                 </button>
@@ -111,7 +151,7 @@ const Header = () => {
                           <Link
                             href={menuItem.path}
                             className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
-                              usePathName === menuItem.path
+                              pathName === menuItem.path
                                 ? "text-primary dark:text-white"
                                 : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                             }`}
@@ -141,10 +181,10 @@ const Header = () => {
                                 openIndex === index ? "block" : "hidden"
                               }`}
                             >
-                              {menuItem.submenu.map((submenuItem, index) => (
+                              {menuItem.submenu.map((submenuItem, subIndex) => (
                                 <Link
                                   href={submenuItem.path}
-                                  key={index}
+                                  key={subIndex}
                                   className="block rounded py-2.5 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white lg:px-3"
                                 >
                                   {submenuItem.title}
@@ -158,19 +198,44 @@ const Header = () => {
                   </ul>
                 </nav>
               </div>
+              {/* Sağ kısım: Kullanıcı bilgisi veya giriş/kayıt butonları */}
               <div className="flex items-center justify-end pr-16 lg:pr-0">
-                <Link
-                  href="/signin"
-                  className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
-                >
-                  Giriş Yap
-                </Link>
-                <Link
-                  href="/signup"
-                  className="ease-in-up shadow-btn hover:shadow-btn-hover hidden rounded-sm bg-primary px-8 py-3 text-base font-medium text-white transition duration-300 hover:bg-opacity-90 md:block md:px-9 lg:px-6 xl:px-9"
-                >
-                  Kayıt Ol
-                </Link>
+                {user ? (
+                  <div className="flex items-center gap-4">
+                    <div className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">
+                      {getInitials(user.name)}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="hidden md:inline-block text-dark dark:text-white/80">
+                        {user.name}
+                      </span>
+                      <span className="hidden md:inline-block text-xs text-gray-500">
+                        {user.email}
+                      </span>
+                    </div>
+                    <button
+                      onClick={openLogoutModal}
+                      className="rounded bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600"
+                    >
+                      Çıkış Yap
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Link
+                      href="/signin"
+                      className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
+                    >
+                      Giriş Yap
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="ease-in-up shadow-btn hover:shadow-btn-hover hidden rounded-sm bg-primary px-8 py-3 text-base font-medium text-white transition duration-300 hover:bg-opacity-90 md:block md:px-9 lg:px-6 xl:px-9"
+                    >
+                      Kayıt Ol
+                    </Link>
+                  </>
+                )}
                 <div>
                   <ThemeToggler />
                 </div>
@@ -179,6 +244,33 @@ const Header = () => {
           </div>
         </div>
       </header>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-dark">
+            <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">
+              Çıkış Yapmak İstediğinize Emin misiniz?
+            </h2>
+            <div className="mb-6 text-gray-600 dark:text-gray-300">
+              Oturumunuz kapatılacak. Devam etmek istiyor musunuz?
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={closeLogoutModal}
+                className="rounded bg-gray-300 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-400"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleLogout}
+                className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+              >
+                Çıkış Yap
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

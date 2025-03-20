@@ -1,9 +1,41 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState, FormEvent } from "react";
 
 const NewsLatterBox = () => {
   const { theme } = useTheme();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!name || !email) {
+      setFeedback("Lütfen tüm alanları doldurun!");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (!res.ok) {
+        setFeedback("Abonelik başarısız oldu.");
+      } else {
+        setFeedback("Abonelik başarılı!");
+        setName("");
+        setEmail("");
+      }
+    } catch (error) {
+      console.error("Abonelik hatası:", error);
+      setFeedback("Abonelik sırasında bir hata oluştu.");
+    }
+  };
 
   return (
     <div
@@ -11,22 +43,26 @@ const NewsLatterBox = () => {
       data-wow-delay=".2s"
     >
       <h3 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white">
-      Gelecekteki güncellemeleri almak için abone olun.
+        Gelecekteki güncellemeleri almak için abone olun.
       </h3>
       <p className="mb-11 border-b border-body-color border-opacity-25 pb-11 text-base leading-relaxed text-body-color dark:border-white dark:border-opacity-25">
-      Yeni özellikler, güncellemeler ve daha fazlası hakkında bilgi almak için abone olun.
+        Yeni özellikler, güncellemeler ve daha fazlası hakkında bilgi almak için abone olun.
       </p>
-      <div>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           name="name"
           placeholder="İsminizi girin"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="border-stroke dark:text-body-color-dark dark:shadow-two mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
         />
         <input
           type="email"
           name="email"
           placeholder="E-posta adresinizi girin"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="border-stroke dark:text-body-color-dark dark:shadow-two mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
         />
         <input
@@ -34,11 +70,12 @@ const NewsLatterBox = () => {
           value="Abone Ol"
           className="shadow-submit dark:shadow-submit-dark mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90"
         />
-        <p className="dark:text-body-color-dark text-center text-base leading-relaxed text-body-color">
-        Abonelikten istediğiniz zaman çıkabilirsiniz.
+      </form>
+      {feedback && (
+        <p className="mb-4 text-center text-sm font-medium text-body-color dark:text-body-color-dark">
+          {feedback}
         </p>
-      </div>
-
+      )}
       <div>
         <span className="absolute left-2 top-7">
           <svg
@@ -169,7 +206,7 @@ const NewsLatterBox = () => {
               />
               <path
                 opacity="0.45"
-                d="M4 73.9999C11 61.3332 30.7 34.7999 53.5 29.9999C82 23.9999 98 25.9999 109 14.4999C120 2.99986 129 -19.5001 152 -19.5001C175 -19.5001 190 -11.0001 203.5 -24.5001C217 -38.0001 213.5 -62.0001 247 -53.5001C273.8 -46.7001 310.167 -61 325 -69"
+                d="M4 73.9999C11 61.3332 30.7 34.7999 53.5 29.9999C82 23.9999 98 25.9999 109 14.49986C120 2.99986 129 -19.5001 152 -19.5001C175 -19.5001 190 -11.0001 203.5 -24.5001C217 -38.0001 213.5 -62.0001 247 -53.5001C273.8 -46.7001 310.167 -61 325 -69"
                 stroke="url(#paint2_linear_1028_603)"
               />
               <path

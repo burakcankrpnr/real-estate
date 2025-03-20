@@ -5,6 +5,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  role: string;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -22,6 +23,8 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       required: [true, "Şifre alanı zorunludur"],
     },
+    role: { type: String, default: "user", enum: ["user", "admin"] },
+
   },
   { timestamps: true }
 );
