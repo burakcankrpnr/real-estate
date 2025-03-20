@@ -29,13 +29,13 @@ const AboutSectionTwo = () => {
     {/* Patron Bilgisi */}
     <div className="mb-9">
       <h3 className="mb-4 text-xl font-bold text-black dark:text-white sm:text-2xl lg:text-xl xl:text-2xl">
-        Patronumuz: Ahmet Yılmaz
+       Ofis Direktörü - Burak Küçüktüzgen
       </h3>
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full overflow-hidden">
           <img
-            src="/images/team/ahmet-yilmaz.jpg" // Patronun fotoğrafı burada olacak
-            alt="Ahmet Yılmaz"
+            src="/images/logo/logo.webp" // Patronun fotoğrafı burada olacak
+            alt="Burak Küçüktüzgen"
             className="w-full h-full object-cover"
           />
         </div>

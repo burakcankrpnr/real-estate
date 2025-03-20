@@ -15,14 +15,14 @@ const Footer = () => {
               <div className="mb-12 max-w-[360px] lg:mb-16">
                 <Link href="/" className="mb-8 inline-block">
                   <Image
-                    src="/images/logo/logo-2.svg"
+                    src="/images/logo/logo.webp"
                     alt="logo"
                     className="w-full dark:hidden"
                     width={140}
                     height={30}
                   />
                   <Image
-                    src="/images/logo/logo.svg"
+                    src="/images/logo/logo.webp"
                     alt="logo"
                     className="hidden w-full dark:block"
                     width={140}
@@ -160,11 +160,12 @@ const Footer = () => {
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[#D2D8E183] to-transparent dark:via-[#959CB183]"></div>
           <div className="py-8">
   <p className="text-center text-base text-body-color dark:text-white">
-    {/* © 2025 AccValo.Shop,{" "} */}
-    {/* <a href="https://www.accvalo.shop/" rel="nofollow noopener">
-      by AccStudio.
-    </a> */}
-    <span className="block mt-2 text-sm">Versiyon 1.0</span>
+    © 2025 - Tüm hakları saklıdır.
+<a href="https://www.accvalo.shop/" rel="nofollow noopener">
+<b/> AccStudio 
+    </a>
+    <b/> 
+    <span className="block mt-2 text-sm">V1.0</span>
   </p>
 </div>
 
