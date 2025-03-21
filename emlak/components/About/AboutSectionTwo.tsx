@@ -29,18 +29,18 @@ const AboutSectionTwo = () => {
     {/* Patron Bilgisi */}
     <div className="mb-9">
       <h3 className="mb-4 text-xl font-bold text-black dark:text-white sm:text-2xl lg:text-xl xl:text-2xl">
-       Ofis Direktörü - Burak Küçüktüzgen
+       Ofis Direktörü 
       </h3>
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full overflow-hidden">
           <img
-            src="/images/logo/logo.png" // Patronun fotoğrafı burada olacak
+            src="/images/burakkucuktuzgen.jpg"
             alt="Burak Küçüktüzgen"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="ml-4">
-          <p className="text-base font-medium text-body-color">CEO & Founder</p>
+          <p className="text-base font-medium text-body-color">Burak Küçüktüzgen</p>
           <p className="text-sm text-body-color">Emlak sektöründeki 10 yılı aşkın tecrübesiyle, müşterilerimize en iyi hizmeti sunmayı hedefliyoruz.</p>
         </div>
       </div>

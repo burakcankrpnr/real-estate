@@ -100,33 +100,49 @@ const Footer = () => {
                 <h2 className="mb-10 text-xl font-bold text-black dark:text-white">
                   Kurumsal
                 </h2>
-                <ul>
-                  <li>
-                    <p className="dark:text-body-color-dark mb-4 text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary">
-                      Misyonumuz
-                    </p>
-                  </li>
-                  <li>
-                    <p className="dark:text-body-color-dark mb-4 text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary">
-                      Vizyonumuz
-                    </p>
-                  </li>
-                  <li>
-                    <p className="dark:text-body-color-dark mb-4 text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary">
-                      İletişim
-                    </p>
-                  </li>
-                  <li>
-                    <p className="dark:text-body-color-dark mb-4 text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary">
-                      Hakkımızda
-                    </p>
-                  </li>
-                  <li>
-                    <p className="dark:text-body-color-dark mb-4 text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary">
-                      Neden Biz?
-                    </p>
-                  </li>
-                </ul>
+<ul>
+  <li>
+    <Link
+      href="/misyon"
+      className="dark:text-body-color-dark mb-4 block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
+    >
+      Misyonumuz
+    </Link>
+  </li>
+  <li>
+    <Link
+      href="/vizyon"
+      className="dark:text-body-color-dark mb-4 block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
+    >
+      Vizyonumuz
+    </Link>
+  </li>
+  <li>
+    
+  </li>
+  <li>
+    <Link
+      href="/about"
+      className="dark:text-body-color-dark mb-4 block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
+    >
+      Hakkımızda
+    </Link>
+  </li>
+  <li>
+    <Link
+      href="/neden-biz"
+      className="dark:text-body-color-dark mb-4 block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
+    >
+      Neden Biz?
+    </Link>
+  </li>
+  <Link
+      href="/contact"
+      className="dark:text-body-color-dark mb-4 block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
+    >
+      İletişim
+    </Link>
+</ul>
               </div>
             </div>
 

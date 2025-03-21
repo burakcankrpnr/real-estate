@@ -174,7 +174,7 @@ const Header = () => {
                       : "invisible top-[120%] opacity-0"
                   }`}
                 >
-                  <ul className="block lg:flex lg:space-x-12">
+                  <ul className="block lg:flex lg:space-x-10">
                   {menuData.map((menuItem, index) => (
   <li key={index} className="group relative">
     {menuItem.path ? (
@@ -222,10 +222,14 @@ const Header = () => {
           </span>
         </p>
         <div
-          className={`rounded-sm bg-white transition-[top] duration-300 group-hover:opacity-100 dark:bg-dark 
-            lg:invisible lg:absolute lg:top-[110%] lg:block lg:w-[150px] lg:p-4 lg:opacity-0 lg:shadow-lg lg:group-hover:visible lg:group-hover:top-full
-            ${openIndex === index ? "block" : "hidden"}`}
-        >
+  className={`
+    rounded-sm bg-white transition-[top] duration-300 dark:bg-dark 
+    lg:invisible lg:absolute lg:top-[110%] lg:block lg:w-[150px] lg:p-4 lg:opacity-0 lg:shadow-lg 
+    group-hover:visible group-hover:opacity-100 group-hover:top-full 
+    ${openIndex === index ? "block" : "hidden"}
+  `}
+>
+
           {menuItem.submenu?.map((submenuItem, subIndex) => {
             if (submenuItem.submenu) {
               return (
@@ -237,10 +241,11 @@ const Header = () => {
                     {submenuItem.title}
                   </p>
                   <div
-                    className={`${
-                      openSubSubIndex === subIndex ? "block" : "hidden"
-                    } bg-white dark:bg-dark shadow-lg w-[180px] lg:absolute lg:left-full lg:top-0`}
-                  >
+  className={`${
+    openSubSubIndex === subIndex ? "block" : "hidden"
+  } bg-white dark:bg-dark shadow-lg w-[180px] lg:absolute lg:left-[105%] lg:top-[-10px]`}
+>
+
                     {submenuItem.submenu.map((child, childIndex) =>
                       child.path.startsWith("http") ? (
                         <a
@@ -256,7 +261,7 @@ const Header = () => {
                         <Link
                           key={childIndex}
                           href={child.path}
-                          className="block py-2 px-3 text-sm hover:text-primary dark:text-white/70 dark:hover:text-white"
+                          className="block py-2 px-2 text-sm hover:text-primary dark:text-white/70 dark:hover:text-white"
                         >
                           {child.title}
                         </Link>
@@ -356,7 +361,7 @@ const Header = () => {
                     <div className="relative" ref={mobileMenuRef}>
                       <button
                         onClick={() => setMobileUserMenuOpen((prev) => !prev)}
-                        className="h-9 w-9 flex items-center justify-center rounded-full bg-primary text-white"
+                        className="h-12 w-12 flex items-center justify-center rounded-full bg-primary text-white"
                       >
                         {getInitials(user.name)}
                       </button>

@@ -4,7 +4,7 @@ import Contact from "@/components/Contact";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "İletişim | Emlak Platformu",
+  title: "İletişim | Tüzgen Group",
   description: "Emlak platformumuza dair tüm sorularınız ve ihtiyaçlarınız için bizimle iletişime geçin.",
   // diğer meta veriler
 };
