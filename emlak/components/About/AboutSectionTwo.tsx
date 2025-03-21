@@ -34,7 +34,7 @@ const AboutSectionTwo = () => {
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full overflow-hidden">
           <img
-            src="/images/logo/logo.webp" // Patronun fotoğrafı burada olacak
+            src="/images/logo/logo.png" // Patronun fotoğrafı burada olacak
             alt="Burak Küçüktüzgen"
             className="w-full h-full object-cover"
           />

@@ -11,8 +11,8 @@ import Video from "@/components/Video";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ana Sayfa | Emlak Platformu",
-  description: "Emlak Ana Sayfası",
+  title: "Ana Sayfa | Tüzgen Group",
+  description: "Tüzgen Group Ana Sayfası",
   // other metadata
 };
 

@@ -5,20 +5,22 @@ import Breadcrumb from "@/components/Common/Breadcrumb";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Hakkımızda | Emlak Platformu",
+  title: "Hakkımızda | Tüzgen Group",
   description: "Emlak platformumuz hakkında daha fazla bilgi edinin. Emlak işlemleri, mülk alım-satım ve kiralama hakkında her türlü sorunuz için bizimle iletişime geçebilirsiniz.",
   // other metadata
 };
 
-const AdvertPage = () => {
+const AboutPage = () => {
   return (
     <>
       <Breadcrumb
-        pageName="İlanlarımız"
+        pageName="Hakkımızda"
         description="Emlak platformumuz hakkında daha fazla bilgi edinin. Emlak işlemleri, mülk alım-satım ve kiralama hakkında her türlü sorunuz için bizimle iletişime geçebilirsiniz."
       />
+      <AboutSectionTwo />
+      <AboutSectionOne />
     </>
   );
 };
 
-export default AdvertPage;
+export default AboutPage;
