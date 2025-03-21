@@ -18,7 +18,7 @@ const CerezYonetimiPage = () => {
       <section className="py-12 lg:py-16">
         <div className="container">
           <div className="mx-auto max-w-4xl text-body-color dark:text-body-color-dark space-y-6 text-base leading-relaxed">
-            <h2 className="text-2xl font-semibold">Çerez Yönetimi</h2>
+            <h2 className="text-2xl font-semibold font-medium text-primary">Çerez Yönetimi</h2>
             <p>
               Herhangi bir internet sitesini ziyaret ettiğinizde, sitenin
               işlevlerinden en iyi şekilde faydalanabilmeniz için kullandığınız
@@ -47,7 +47,7 @@ const CerezYonetimiPage = () => {
             </p>
 
             {/* Hedefleme */}
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-2xl font-semibold font-medium text-primary">
               Hedefleme Amaçlı Tanımlama Bilgileri
             </h3>
             <p>
@@ -65,7 +65,7 @@ const CerezYonetimiPage = () => {
             </p>
 
             {/* Zorunlu */}
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-2xl font-semibold font-medium text-primary">
               Zorunlu Tanımlama Bilgileri
             </h3>
             <p>
@@ -80,7 +80,7 @@ const CerezYonetimiPage = () => {
             </p>
 
             {/* İşlevsel */}
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-2xl font-semibold font-medium text-primary">
               İşlevsel Tanımlama Bilgileri
             </h3>
             <p>
@@ -95,7 +95,7 @@ const CerezYonetimiPage = () => {
             </p>
 
             {/* Performans */}
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-2xl font-semibold font-medium text-primary">
               Performans Tanımlama Bilgileri
             </h3>
             <p>
