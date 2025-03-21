@@ -18,7 +18,6 @@ const AboutPage = () => {
         description="Emlak platformumuz hakkında daha fazla bilgi edinin. Emlak işlemleri, mülk alım-satım ve kiralama hakkında her türlü sorunuz için bizimle iletişime geçebilirsiniz."
       />
       <AboutSectionTwo />
-      <AboutSectionOne />
     </>
   );
 };

@@ -17,7 +17,7 @@ const AboutSectionTwo = () => {
                 className="drop-shadow-three dark:hidden dark:drop-shadow-none"
               />
               <Image
-  src="/images/logov1.jpg "
+  src="/images/about/about-image-2-dark.svg"
   alt="about image"
   fill
   className="drop-shadow-three hidden dark:block dark:drop-shadow-none object-scale-down"

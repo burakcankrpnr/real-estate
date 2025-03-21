@@ -126,7 +126,7 @@ const menuData = [
   },
   {
     title: "Danışmanlar",
-    path: "/danismanlar",
+    path: "/about",
   },
   {
     title: "Ofisler",
