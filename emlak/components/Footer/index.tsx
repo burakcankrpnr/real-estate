@@ -243,8 +243,8 @@ const Footer = () => {
           <div className="py-8">
             <p className="text-center text-base text-body-color dark:text-white">
             <a href="/" rel="nofollow noopener">
-                <b /> Tüzgen Group
-              </a> © 2025. Tüm hakları saklıdır.
+                <b /> Tüzgen Group -
+              </a> Tüm hakları saklıdır.
               
               <b />
               {/* <span className="block mt-2 text-sm">V1.0</span> */}
