@@ -23,8 +23,11 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       required: [true, "Şifre alanı zorunludur"],
     },
-    role: { type: String, default: "user", enum: ["user", "admin"] },
-
+    role: { 
+      type: String, 
+      default: "user", 
+      enum: ["user", "admin", "moderator"] 
+    },
   },
   { timestamps: true }
 );

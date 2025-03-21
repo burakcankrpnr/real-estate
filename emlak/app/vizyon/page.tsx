@@ -96,6 +96,13 @@ const VizyonPage = () => {
               yolunda emin adımlarla ilerliyoruz.
             </p>
           </div>
+          <div className="pt-6">
+              <img
+                src="/images/logov1.jpg "
+                alt="Hesap Sözleşmesi Görseli"
+                className="mx-auto"
+              />
+            </div>
         </div>
       </section>
     </>

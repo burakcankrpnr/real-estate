@@ -129,7 +129,7 @@ const menuData = [
     path: "/danismanlar",
   },
   {
-    title: "Ofisler ©",
+    title: "Ofisler",
     path: "/ofisler",
   },
   {

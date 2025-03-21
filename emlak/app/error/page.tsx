@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "404 | Emlak Platformu",
+  title: "404 | Tüzgen Group",
   description: "Aradığınız sayfa bulunamadı.",
   // other metadata
 };

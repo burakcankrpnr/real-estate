@@ -9,19 +9,23 @@ const Hero = () => {
       >
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
-            <div className="w-full px-4">
-              <div
-                className="wow fadeInUp mx-auto max-w-[800px] text-center"
-                data-wow-delay=".2s"
-              >
-                <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-                  Türkiye'nin En Güvenilir Emlak Platformu
-                </h1>
-                <p className="dark:text-body-color-dark mb-12 text-base !leading-relaxed text-body-color sm:text-lg md:text-xl">
-                  Yatırımcılar, alıcılar ve satıcılar için sunduğumuz kapsamlı emlak çözümleriyle sektördeki en güvenilir platformu sunuyoruz. 36 kişilik profesyonel ekibimizle, her türlü emlak işleminizi hızlı ve güvenli bir şekilde gerçekleştirmenize yardımcı oluyoruz.
-                </p>
-              </div>
-            </div>
+          <div className="w-full px-4">
+  <div
+    className="wow fadeInUp mx-auto max-w-[800px] text-center"
+    data-wow-delay=".2s"
+  >
+    <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
+      Tüzgen Group Emlak
+    </h1>
+    <h2 className="mb-12 text-lg font-medium text-body-color dark:text-body-color-dark sm:text-xl md:text-2xl">
+      Güvenilir, Şeffaf ve Yenilikçi Emlak Hizmetleri
+    </h2>
+    <p className="dark:text-body-color-dark mb-12 text-base !leading-relaxed text-body-color sm:text-lg md:text-xl">
+      Tüzgen Group olarak, modern teknolojilerle desteklenen uzman kadromuzla emlak sektöründe fark yaratıyoruz. Gayrimenkul alım-satım, kiralama ve yatırım danışmanlığı süreçlerinde şeffaf, hızlı ve çözüm odaklı hizmet anlayışımızla daima yanınızdayız. Hayalinizdeki gayrimenkule güvenle ulaşmanız için buradayız.
+    </p>
+  </div>
+</div>
+
           </div>
         </div>
         <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">

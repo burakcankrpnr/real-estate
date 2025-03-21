@@ -17,11 +17,12 @@ const AboutSectionTwo = () => {
                 className="drop-shadow-three dark:hidden dark:drop-shadow-none"
               />
               <Image
-                src="/images/about/sa.png"
-                alt="about image"
-                fill
-                className="drop-shadow-three hidden dark:block dark:drop-shadow-none"
-              />
+  src="/images/logov1.jpg "
+  alt="about image"
+  fill
+  className="drop-shadow-three hidden dark:block dark:drop-shadow-none object-scale-down"
+/>
+
             </div>
           </div>
           <div className="w-full px-4 lg:w-1/2">
@@ -29,15 +30,18 @@ const AboutSectionTwo = () => {
     {/* Patron Bilgisi */}
     <div className="mb-9">
       <h3 className="mb-4 text-xl font-bold text-black dark:text-white sm:text-2xl lg:text-xl xl:text-2xl">
-       Ofis Direktörü 
+       Ofis Direktörümüz 
       </h3>
       <div className="flex items-center mb-4">
-        <div className="w-16 h-16 rounded-full overflow-hidden">
-          <img
-            src="/images/burakkucuktuzgen.jpg"
-            alt="Burak Küçüktüzgen"
-            className="w-full h-full object-cover"
-          />
+      <div className="w-128 h-128 rounded-full overflow-hidden relative">
+  <Image
+    src="/images/burakkucuktuzgen.jpg"
+    alt="Burak Küçüktüzgen"
+    width={128}
+    height={128}
+    className="rounded-full object-cover"
+  />
+
         </div>
         <div className="ml-4">
           <p className="text-base font-medium text-body-color">Burak Küçüktüzgen</p>
