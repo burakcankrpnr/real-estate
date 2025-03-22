@@ -3,62 +3,116 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function SignupPageClient() {
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    terms?: string;
+  }>({});
 
-  // Alert message state
-  const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [alertType, setAlertType] = useState<"success" | "error">("error");
-
-  // Hide alert after 5 seconds
-  useEffect(() => {
-    if (alertMessage) {
-      const timer = setTimeout(() => {
-        setAlertMessage(null);
-      }, 5000);
-      return () => clearTimeout(timer);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+    
+    // Giriş alanı doldurulduğunda hata mesajını temizle
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: undefined,
+      });
     }
-  }, [alertMessage]);
+  };
+
+  const validateForm = () => {
+    const newErrors: {
+      name?: string;
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+      terms?: string;
+    } = {};
+    
+    // İsim doğrulama
+    if (!formData.name) {
+      newErrors.name = "Ad ve soyad gereklidir";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Ad ve soyad en az 3 karakter olmalıdır";
+    }
+    
+    // E-posta doğrulama
+    if (!formData.email) {
+      newErrors.email = "E-posta adresi gereklidir";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Geçerli bir e-posta adresi girin";
+    }
+    
+    // Şifre doğrulama
+    if (!formData.password) {
+      newErrors.password = "Şifre gereklidir";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Şifre en az 6 karakter olmalıdır";
+    }
+    
+    // Şifre tekrar doğrulama
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Şifre tekrarı gereklidir";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Şifreler eşleşmiyor";
+    }
+    
+    // Şartlar ve koşullar doğrulama
+    if (!acceptTerms) {
+      newErrors.terms = "Kayıt olmak için şartları ve koşulları kabul etmelisiniz";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Form submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Simple validation
-    if (!name || !email || !password) {
-      showAlert("Lütfen tüm alanları doldurun!", "error");
+    if (!validateForm()) {
       return;
     }
-
-    if (!acceptTerms) {
-      showAlert(
-        "Kayıt Olabilmek için Şartları ve Gizlilik Politikasını Kabul Etmelisiniz!",
-        "error"
-      );
-      return;
-    }
+    
+    setIsLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ 
+          name: formData.name, 
+          email: formData.email, 
+          password: formData.password 
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // In case of error
-        showAlert(data.error || "Kayıt başarısız!", "error");
+        toast.error(data.error || "Kayıt işlemi başarısız oldu");
       } else {
-        // In case of success - update localStorage and trigger userChanged event
-        showAlert("Kayıt Başarılı", "success");
+        toast.success("Kayıt işlemi başarılı, giriş yapılıyor");
 
         // Store user data in localStorage
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -66,67 +120,41 @@ export default function SignupPageClient() {
         // Dispatch userChanged event
         window.dispatchEvent(new Event("userChanged"));
 
-        // Redirect to the homepage after 1.5 seconds
+        // Redirect to the homepage after success
         setTimeout(() => {
           router.push("/");
-        }, 500);
+        }, 1000);
       }
     } catch (error) {
-      showAlert("Sunucu hatası oluştu!", "error");
+      toast.error("Sunucu hatası oluştu, lütfen daha sonra tekrar deneyin");
       console.error("Kayıt Hatası:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Alert message function
-  const showAlert = (message: string, type: "success" | "error") => {
-    setAlertMessage(message);
-    setAlertType(type);
-  };
   return (
     <>
-      {/* Sağ üst köşede otomatik kaybolan alert */}
-      {alertMessage && (
-        <div className="fixed top-20 right-4 z-50 w-full max-w-sm">
-          <div
-            className={`
-              flex items-start gap-3 rounded-md border p-4 shadow-md
-              ${alertType === "success"
-                ? "border-green-400 bg-green-50 text-green-700"
-                : "border-red-400 bg-red-50 text-red-700"
-              }
-            `}
-          >
-            {/* İkon */}
-            <div className="mt-1">
-              {alertType === "success" ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-            </div>
-            {/* Mesaj */}
-            <div className="flex-1 text-sm font-medium">{alertMessage}</div>
-          </div>
-        </div>
-      )}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            style: {
+              background: '#22c55e',
+            },
+          },
+          error: {
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
 
       <section className="relative z-10 overflow-hidden pb-16 pt-36 md:pb-20 lg:pb-28 lg:pt-[180px]">
         <div className="container">
@@ -140,71 +168,130 @@ export default function SignupPageClient() {
                   Hesap oluşturarak daha hızlı bilgi alabilirsiniz.
                 </p>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                   <div className="mb-8">
                     <label
                       htmlFor="name"
-                      className="mb-3 block text-sm text-dark dark:text-white"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
                     >
-                      Adınız ve  Soyadınız
+                      Adınız ve Soyadınız
                     </label>
                     <input
                       type="text"
+                      id="name"
                       name="name"
                       placeholder="Adınız ve Soyadınız"
-                      className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.name ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={isLoading}
                     />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                    )}
                   </div>
+                  
                   <div className="mb-8">
                     <label
                       htmlFor="email"
-                      className="mb-3 block text-sm text-dark dark:text-white"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
                     >
                       E-posta Adresiniz
                     </label>
                     <input
                       type="email"
+                      id="email"
                       name="email"
                       placeholder="E-posta Adresiniz"
-                      className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.email ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={isLoading}
                     />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                    )}
                   </div>
+                  
                   <div className="mb-8">
                     <label
                       htmlFor="password"
-                      className="mb-3 block text-sm text-dark dark:text-white"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
                     >
                       Şifreniz
                     </label>
                     <input
                       type="password"
+                      id="password"
                       name="password"
-                      placeholder="Şifreniz"
-                      className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Şifreniz (en az 6 karakter)"
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.password ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={isLoading}
                     />
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mb-8">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
+                    >
+                      Şifre Tekrar
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="Şifrenizi tekrar girin"
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.confirmPassword ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                    {errors.confirmPassword && (
+                      <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
+                    )}
                   </div>
 
                   {/* Gizlilik ve Şartlar Onayı */}
                   <div className="mb-8 flex">
                     <label
-                      htmlFor="checkboxLabel"
-                      className="flex cursor-pointer select-none text-sm font-medium text-body-color"
+                      htmlFor="acceptTerms"
+                      className={`flex cursor-pointer select-none text-sm font-medium ${
+                        errors.terms ? "text-red-500" : "text-body-color"
+                      }`}
                     >
                       <div className="relative">
                         <input
                           type="checkbox"
-                          id="checkboxLabel"
+                          id="acceptTerms"
                           className="sr-only"
                           checked={acceptTerms}
-                          onChange={(e) => setAcceptTerms(e.target.checked)}
+                          onChange={(e) => {
+                            setAcceptTerms(e.target.checked);
+                            if (errors.terms) {
+                              setErrors({...errors, terms: undefined});
+                            }
+                          }}
+                          disabled={isLoading}
                         />
-                        <div className="box mr-4 mt-1 flex h-5 w-5 items-center justify-center rounded border border-body-color border-opacity-20 dark:border-white dark:border-opacity-10">
+                        <div className={`box mr-4 mt-1 flex h-5 w-5 items-center justify-center rounded border ${
+                          errors.terms 
+                            ? "border-red-500" 
+                            : "border-body-color border-opacity-20 dark:border-white dark:border-opacity-10"
+                        }`}>
                           {acceptTerms && (
                             <span>
                               <svg
@@ -238,29 +325,43 @@ export default function SignupPageClient() {
                       </span>
                     </label>
                   </div>
+                  {errors.terms && (
+                    <p className="mb-4 -mt-6 text-sm text-red-500">{errors.terms}</p>
+                  )}
 
                   <div className="mb-6">
                     <button
                       type="submit"
-                      className="shadow-submit dark:shadow-submit-dark flex w-full items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90"
+                      disabled={isLoading}
+                      className="shadow-submit dark:shadow-submit-dark flex w-full items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Kayıt Ol
+                      {isLoading ? (
+                        <>
+                          <svg className="mr-2 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Kayıt Yapılıyor...
+                        </>
+                      ) : (
+                        "Kayıt Ol"
+                      )}
                     </button>
                   </div>
                 </form>
-
+                
                 <p className="text-center text-base font-medium text-body-color">
-                  Zaten bir hesabınız var mı?{" "}
+                  Zaten hesabınız var mı?{" "}
                   <Link href="/signin" className="text-primary hover:underline">
-                    Giriş Yapın
+                    Giriş Yap
                   </Link>
                 </p>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Dekoratif SVG görseli */}
+        
+        {/* Background */}
         <div className="absolute left-0 top-0 z-[-1]">
           <svg
             width="1440"

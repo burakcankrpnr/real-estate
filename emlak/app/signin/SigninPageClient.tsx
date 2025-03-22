@@ -2,117 +2,130 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function SigninPageClient() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
 
-  // Alert mesajı için state
-  const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [alertType, setAlertType] = useState<"success" | "error">("error");
-
-  // Alert gösterildiğinde 5 sn sonra kaybolması
-  useEffect(() => {
-    if (alertMessage) {
-      const timer = setTimeout(() => {
-        setAlertMessage(null);
-      }, 5000);
-      return () => clearTimeout(timer);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+    
+    // Giriş alanı doldurulduğunda hata mesajını temizle
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: undefined,
+      });
     }
-  }, [alertMessage]);
+  };
 
-  // Alert gösteren fonksiyon
-  const showAlert = (message: string, type: "success" | "error") => {
-    setAlertMessage(message);
-    setAlertType(type);
+  const validateForm = () => {
+    const newErrors: {
+      email?: string;
+      password?: string;
+    } = {};
+    
+    // E-posta doğrulama
+    if (!formData.email) {
+      newErrors.email = "E-posta adresi gereklidir";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Geçerli bir e-posta adresi girin";
+    }
+    
+    // Şifre doğrulama
+    if (!formData.password) {
+      newErrors.password = "Şifre gereklidir";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Şifre en az 6 karakter olmalıdır";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   
-    if (!email || !password) {
-      showAlert("Lütfen Tüm Alanları Doldurun!", "error");
+    if (!validateForm()) {
       return;
     }
   
+    setIsLoading(true);
+    
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ 
+          email: formData.email, 
+          password: formData.password, 
+          rememberMe 
+        }),
       });
   
       const data = await res.json();
   
       if (!res.ok) {
-        showAlert(data.error || "Giriş başarısız!", "error");
+        toast.error(data.error || "Giriş başarısız!");
       } else {
-        // Giriş başarılı olduğunda, kullanıcı verisini localStorage'a kaydediyoruz.
+        // Kullanıcı verisini localStorage'a kaydet
         localStorage.setItem("user", JSON.stringify(data.user));
         
-        // User change event tetikleniyor
+        // User change event tetikle
         window.dispatchEvent(new Event("userChanged"));
         
-        showAlert("Giriş Başarılı, Yönlendiriliyorsunuz...", "success");
+        toast.success("Giriş başarılı, yönlendiriliyorsunuz");
+        
+        // Başarılı girişten sonra anasayfaya yönlendir
         setTimeout(() => {
           router.push("/");
-        }, 500);
+        }, 1000);
       }
     } catch (error) {
-      showAlert("Sunucu hatası oluştu!", "error");
+      toast.error("Sunucu hatası oluştu, lütfen daha sonra tekrar deneyin");
       console.error("Giriş hatası:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
 
   return (
     <>
-      {/* Sağ üst köşede otomatik kaybolan alert */}
-      {alertMessage && (
-        <div className="fixed top-20 right-4 z-50 w-full max-w-sm">
-          <div
-            className={`
-              flex items-start gap-3 rounded-md border p-4 shadow-md
-              ${alertType === "success"
-                ? "border-green-400 bg-green-50 text-green-700"
-                : "border-red-400 bg-red-50 text-red-700"
-              }
-            `}
-          >
-            {/* İkon */}
-            <div className="mt-1">
-              {alertType === "success" ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-            </div>
-            {/* Mesaj */}
-            <div className="flex-1 text-sm font-medium">{alertMessage}</div>
-          </div>
-        </div>
-      )}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            style: {
+              background: '#22c55e',
+            },
+          },
+          error: {
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
 
       <section className="relative z-10 overflow-hidden pb-16 pt-36 md:pb-20 lg:pb-28 lg:pt-[180px]">
         <div className="container">
@@ -126,39 +139,55 @@ export default function SigninPageClient() {
                   Daha fazla bilgi almak için giriş yapın.
                 </p>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                   <div className="mb-8">
                     <label
                       htmlFor="email"
-                      className="mb-3 block text-sm text-dark dark:text-white"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
                     >
                       E-posta Adresiniz
                     </label>
                     <input
                       type="email"
+                      id="email"
                       name="email"
                       placeholder="E-posta adresinizi girin"
-                      className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.email ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={isLoading}
                     />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                    )}
                   </div>
+                  
                   <div className="mb-8">
                     <label
                       htmlFor="password"
-                      className="mb-3 block text-sm text-dark dark:text-white"
+                      className="mb-3 block text-sm font-medium text-dark dark:text-white"
                     >
                       Şifreniz
                     </label>
                     <input
                       type="password"
+                      id="password"
                       name="password"
                       placeholder="Şifrenizi girin"
-                      className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      className={`border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none ${
+                        errors.password ? "border-red-500 focus:border-red-500 dark:focus:border-red-500" : ""
+                      }`}
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={isLoading}
                     />
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                    )}
                   </div>
+                  
                   <div className="mb-8 flex flex-col justify-between sm:flex-row sm:items-center">
                     <div className="mb-4 sm:mb-0">
                       <label
@@ -168,9 +197,10 @@ export default function SigninPageClient() {
                         <input
                           type="checkbox"
                           id="rememberMe"
-                          className="mr-3 h-5 w-5 rounded border border-body-color bg-[#f8f8f8] dark:border-white dark:bg-[#2C303B]"
+                          className="mr-3 h-5 w-5 cursor-pointer rounded border border-body-color bg-[#f8f8f8] checked:bg-primary dark:border-white dark:bg-[#2C303B]"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
+                          disabled={isLoading}
                         />
                         Beni Hatırla
                       </label>
@@ -181,15 +211,28 @@ export default function SigninPageClient() {
                       </Link>
                     </div>
                   </div>
+                  
                   <div className="mb-6">
                     <button
                       type="submit"
-                      className="shadow-submit dark:shadow-submit-dark flex w-full items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90"
+                      disabled={isLoading}
+                      className="shadow-submit dark:shadow-submit-dark flex w-full items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Giriş Yap
+                      {isLoading ? (
+                        <>
+                          <svg className="mr-2 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Giriş Yapılıyor...
+                        </>
+                      ) : (
+                        "Giriş Yap"
+                      )}
                     </button>
                   </div>
                 </form>
+                
                 <p className="text-center text-base font-medium text-body-color">
                   Hesabınız yok mu?{" "}
                   <Link href="/signup" className="text-primary hover:underline">

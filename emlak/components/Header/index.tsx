@@ -13,6 +13,7 @@ interface User {
   name: string
   email: string
   role?: string
+  profileImage?: string
 }
 
 const Header = () => {
@@ -24,6 +25,7 @@ const Header = () => {
   const [sticky, setSticky] = useState(false)
   const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [desktopUserMenuOpen, setDesktopUserMenuOpen] = useState(false)
 
   // Desktop menu state - track open menus by index
   const [activeMainMenu, setActiveMainMenu] = useState<number | null>(null)
@@ -84,6 +86,22 @@ const Header = () => {
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
+  // Close desktop user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        desktopUserMenuOpen &&
+        e.target instanceof Node &&
+        !document.getElementById("desktop-user-menu-trigger")?.contains(e.target as Node) &&
+        !document.getElementById("desktop-user-menu")?.contains(e.target as Node)
+      ) {
+        setDesktopUserMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [desktopUserMenuOpen])
 
   // Close desktop menus when clicking outside
   useEffect(() => {
@@ -550,28 +568,149 @@ const Header = () => {
                 <div className="hidden lg:flex items-center gap-3">
                   {user ? (
                     <>
-                      <div className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">
-                        {getInitials(user.name)}
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-dark dark:text-white/80">{user.name}</span>
-                        <span className="text-xs text-gray-500">{user.email}</span>
-                      </div>
-                      {/* Admin only */}
-                      {user.role === "admin" && (
-                        <Link
-                          href="/admin"
-                          className="rounded bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600"
+                      <div className="relative">
+                        <button
+                          id="desktop-user-menu-trigger"
+                          onClick={() => setDesktopUserMenuOpen(!desktopUserMenuOpen)}
+                          className="flex items-center gap-2 cursor-pointer"
                         >
-                          Admin Panel
-                        </Link>
-                      )}
-                      <button
-                        onClick={openLogoutModal}
-                        className="rounded bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600"
-                      >
-                        Çıkış Yap
-                      </button>
+                          {user.profileImage ? (
+                            <div className="relative inline-flex h-10 w-10 overflow-hidden rounded-full border-2 border-primary">
+                              <Image 
+                                src={user.profileImage} 
+                                alt={user.name}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">
+                              {getInitials(user.name)}
+                            </div>
+                          )}
+                          <div className="flex flex-col text-left">
+                            <span className="text-dark dark:text-white/80">{user.name}</span>
+                            <span className="text-xs text-gray-500">{user.email}</span>
+                          </div>
+                          <svg
+                            className={`h-4 w-4 transition-transform duration-300 ${desktopUserMenuOpen ? "rotate-180" : ""}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                        
+                        {desktopUserMenuOpen && (
+                          <div 
+                            id="desktop-user-menu"
+                            className="absolute right-0 mt-2 w-60 rounded-md bg-white py-2 shadow-lg dark:bg-gray-800 animate-in fade-in slide-in-from-top-5 duration-200 z-50"
+                          >
+                            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                              <p className="font-medium text-gray-800 dark:text-gray-200">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
+                              {user.role && (
+                                <div className="mt-1">
+                                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    {user.role}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="py-1">
+                              <Link
+                                href="/hesabim"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="mr-2 h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Hesabım
+                              </Link>
+                              <Link
+                                href="/favoriler"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="mr-2 h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                                Favorilerim
+                              </Link>
+                              
+                              {/* Admin paneli bağlantısı - sadece admin ve moderator rolleri için görünür */}
+                              {(user.role === "admin" || user.role === "moderator") && (
+                                <Link
+                                  href="/Admin"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="mr-2 h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                  </svg>
+                                  Admin Paneli
+                                </Link>
+                              )}
+                            </div>
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-1">
+                              <button
+                                onClick={openLogoutModal}
+                                className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="mr-2 h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                  />
+                                </svg>
+                                Çıkış Yap
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </>
                   ) : (
                     <>
@@ -598,10 +737,20 @@ const Header = () => {
                     <div className="relative" ref={mobileMenuRef}>
                       <button
                         onClick={() => setMobileUserMenuOpen(!mobileUserMenuOpen)}
-                        className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white ring-2 ring-primary/20 transition-all duration-300 hover:ring-4"
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white ring-2 ring-primary/20 transition-all duration-300 hover:ring-4 overflow-hidden"
                         aria-label="User menu"
                       >
-                        {getInitials(user.name)}
+                        {user.profileImage ? (
+                          <Image 
+                            src={user.profileImage} 
+                            alt={user.name}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          getInitials(user.name)
+                        )}
                       </button>
                       {mobileUserMenuOpen && (
                         <div className="absolute left-0 mt-2 w-59 rounded-md bg-white py-2 shadow-lg dark:bg-gray-800 animate-in fade-in slide-in-from-top-5 duration-200">
@@ -618,7 +767,7 @@ const Header = () => {
                           </div>
                           <div className="py-1">
                             <Link
-                              href="/profile"
+                              href="/hesabim"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                             >
                               <svg
@@ -628,18 +777,30 @@ const Header = () => {
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                               </svg>
-                              Profil
+                              Hesabım
                             </Link>
-                            {user.role === "admin" && (
+                            <Link
+                              href="/favoriler"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="mr-2 h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                              </svg>
+                              Favorilerim
+                            </Link>
+                            
+                            {/* Admin paneli bağlantısı - sadece admin ve moderator rolleri için görünür */}
+                            {(user.role === "admin" || user.role === "moderator") && (
                               <Link
-                                href="/admin"
+                                href="/Admin"
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                               >
                                 <svg
@@ -653,8 +814,7 @@ const Header = () => {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 
- 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
                                   />
                                   <path
                                     strokeLinecap="round"
@@ -663,7 +823,7 @@ const Header = () => {
                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                                   />
                                 </svg>
-                                Admin Panel
+                                Admin Paneli
                               </Link>
                             )}
                           </div>

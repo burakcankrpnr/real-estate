@@ -38,7 +38,16 @@ module.exports = {
         white: "#FFFFFF",
         black: "#121723",
         dark: "#1D2430",
-        primary: "#4A6CF7",
+        primary: {
+          DEFAULT: "#2563eb",
+          light: "#60a5fa",
+          dark: "#1d4ed8",
+        },
+        secondary: {
+          DEFAULT: "#f59e0b",
+          light: "#fbbf24",
+          dark: "#d97706",
+        },
         yellow: "#FBB040",
         "body-color": "#788293",
         "body-color-dark": "#959CB1",
@@ -65,6 +74,9 @@ module.exports = {
       },
       dropShadow: {
         three: "0px 5px 15px rgba(6, 8, 15, 0.05)",
+      },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
       },
     },
   },

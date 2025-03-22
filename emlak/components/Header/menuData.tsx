@@ -1,5 +1,8 @@
 const menuData = [
-  
+  {
+    title: "İlanlar",
+    path: "/ilanlar",
+  },
   {
     title: "Satılık",
     submenu: [
