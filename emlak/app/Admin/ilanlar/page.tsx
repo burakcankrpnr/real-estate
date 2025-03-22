@@ -305,7 +305,7 @@ const PropertyListPage = () => {
               {properties.map((property) => (
                 <tr key={property._id}>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center">
+                    <Link href={`/emlak/${property._id}`} className="flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded p-1 cursor-pointer">
                       <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                         {property.images && property.images.length > 0 ? (
                           <img
@@ -335,7 +335,7 @@ const PropertyListPage = () => {
                           {property.type === "house" && "Müstakil Ev"}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm text-gray-900 dark:text-white">{property.location.city}</div>

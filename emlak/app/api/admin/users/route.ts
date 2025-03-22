@@ -44,9 +44,10 @@ export async function GET(request: NextRequest) {
       email: 1,
       role: 1,
       createdAt: 1,
+      updatedAt: 1
     }).sort({ createdAt: -1 }); // En son kayıt olana göre sırala
 
-    return NextResponse.json({ users });
+    return NextResponse.json(users);
   } catch (err: any) {
     console.error("Kullanıcıları getirme hatası:", err);
     return NextResponse.json({ error: "İşlem sırasında bir hata oluştu." }, { status: 500 });

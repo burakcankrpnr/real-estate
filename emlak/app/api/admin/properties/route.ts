@@ -9,85 +9,93 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 // Admin için tüm ilanları getir (onaylı veya onaysız)
 export async function GET(request: NextRequest) {
   try {
-    // İki yöntem var:
-    // 1. Header üzerinden kullanıcı ID'si kontrol (client taraflı auth)
-    // 2. NextAuth üzerinden oturum kontrolü (server taraflı auth)
-    
-    const userId = request.headers.get("user-id");
-    let adminUser = null;
-    
-    if (userId) {
-      // Client taraflı auth - middleware authMiddleware üzerinden kontrol edildi
-      const authResult = await checkAdminRole(request);
-      if (authResult instanceof NextResponse) {
-        return authResult; // Yetki hatası durumunda döndür
-      }
-      
-      adminUser = authResult.user;
-    } else {
-      // Server taraflı auth - NextAuth üzerinden kontrol
-      const session = await getServerSession(authOptions);
-      if (!session || !session.user) {
-        return NextResponse.json(
-          { error: "Oturum açmanız gerekiyor." },
-          { status: 401 }
-        );
-      }
-      
-      await dbConnect();
-      adminUser = await User.findOne({ email: session.user.email });
-      
-      if (!adminUser || (adminUser.role !== "admin" && adminUser.role !== "moderator")) {
-        return NextResponse.json(
-          { error: "Bu işlem için yetkiniz bulunmamaktadır." },
-          { status: 403 }
-        );
-      }
-    }
-    
-    // İlan verileri getirme işlemleri (her iki yöntem için de aynı)
     await dbConnect();
-    
+
+    // URL'den query parametrelerini al
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
     const approved = searchParams.get("approved");
     const featured = searchParams.get("featured");
-    
+    const pending = searchParams.get("pending");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
+
+    // Admin kimlik doğrulama
+    const userId = request.headers.get("user-id");
     
-    // Filtreleme koşulları oluşturma
+    if (!userId) {
+      return NextResponse.json({ error: "Yetkilendirme hatası" }, { status: 401 });
+    }
+
+    const adminUser = await User.findById(userId);
+    
+    if (!adminUser) {
+      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+    }
+    
+    if (adminUser.role !== "admin" && adminUser.role !== "moderator") {
+      return NextResponse.json(
+        { error: "Bu işlem için yetkiniz bulunmamaktadır" },
+        { status: 403 }
+      );
+    }
+
+    // Filtreleme
     const filter: any = {};
-    
-    if (approved !== null && approved !== undefined) {
-      filter.isApproved = approved === "true";
+
+    // Moderatörler sadece kendi ilanlarını görebilir
+    if (adminUser.role === "moderator") {
+      filter.createdBy = adminUser._id;
     }
-    
-    if (featured !== null && featured !== undefined) {
-      filter.isFeatured = featured === "true";
+
+    // Onay durumuna göre filtreleme
+    if (approved === "true") {
+      filter.isApproved = true;
+    } else if (approved === "false") {
+      filter.isApproved = false;
     }
-    
+
+    // Öne çıkan durumuna göre filtreleme
+    if (featured === "true") {
+      filter.isFeatured = true;
+    } else if (featured === "false") {
+      filter.isFeatured = false;
+    }
+
+    // Onay bekleyen ilanları filtreleme
+    if (pending === "true") {
+      filter.isApproved = false;
+      
+      // Moderatörler sadece kendi onay bekleyen ilanlarını görebilir
+      if (adminUser.role === "moderator") {
+        filter.createdBy = adminUser._id;
+      }
+    }
+
+    // Toplam sayfa sayısını hesapla
+    const totalCount = await Property.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // İlanları getir
     const properties = await Property.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("createdBy", "name email");
-    
-    const total = await Property.countDocuments(filter);
-    
+      .populate("createdBy", "name email role")
+      .lean();
+
     return NextResponse.json({
       properties,
       pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        totalPages,
+        totalCount,
       },
     });
-  } catch (error: any) {
-    console.error("Admin ilanları getirme hatası:", error);
+  } catch (error) {
+    console.error("İlanları getirme hatası:", error);
     return NextResponse.json(
-      { error: "İlanları getirirken bir hata oluştu." },
+      { error: "İlanlar alınırken bir hata oluştu" },
       { status: 500 }
     );
   }
@@ -96,87 +104,103 @@ export async function GET(request: NextRequest) {
 // Yeni ilan oluştur
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
+
+    // Admin kimlik doğrulama
     const userId = request.headers.get("user-id");
-    let adminUser = null;
     
-    if (userId) {
-      // Client taraflı auth - middleware authMiddleware üzerinden kontrol edildi
-      const authResult = await checkAdminRole(request);
-      if (authResult instanceof NextResponse) {
-        return authResult; // Yetki hatası durumunda döndür
-      }
-      
-      adminUser = authResult.user;
-    } else {
-      // Server taraflı auth - NextAuth üzerinden kontrol
-      const session = await getServerSession(authOptions);
-      if (!session || !session.user) {
-        return NextResponse.json(
-          { error: "Oturum açmanız gerekiyor." },
-          { status: 401 }
-        );
-      }
-      
-      await dbConnect();
-      adminUser = await User.findOne({ email: session.user.email });
-      
-      if (!adminUser || (adminUser.role !== "admin" && adminUser.role !== "moderator")) {
-        return NextResponse.json(
-          { error: "Bu işlem için yetkiniz bulunmamaktadır." },
-          { status: 403 }
-        );
-      }
+    if (!userId) {
+      return NextResponse.json({ error: "Yetkilendirme hatası" }, { status: 401 });
     }
     
-    await dbConnect();
+    const adminUser = await User.findById(userId);
     
-    const data = await request.json();
-    const { 
-      title, 
-      description, 
-      price, 
-      location, 
-      features, 
-      type, 
-      status, 
-      images, 
+    if (!adminUser) {
+      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+    }
+    
+    if (adminUser.role !== "admin" && adminUser.role !== "moderator") {
+      return NextResponse.json(
+        { error: "Bu işlem için yetkiniz bulunmamaktadır" },
+        { status: 403 }
+      );
+    }
+
+    const requestBody = await request.json();
+    
+    const {
+      title,
+      description,
+      price,
+      address,
+      city,
+      location,
+      type,
+      status,
+      roomCount,
+      bathroomCount,
+      area,
+      floorCount,
+      floorNumber,
+      bedroomCount,
+      buildingAge,
+      heatingType,
+      features,
+      images,
       isApproved,
-      isFeatured 
-    } = data;
-    
-    // Zorunlu alanların kontrolü
-    if (!title || !description || !price || !location || !type || !status) {
+      isFeatured,
+    } = requestBody;
+
+    // Gerekli alanları kontrol et
+    if (!title || !description || !price || !city || !type || !status) {
       return NextResponse.json(
         { error: "Tüm zorunlu alanları doldurunuz" },
         { status: 400 }
       );
     }
-    
-    // Yeni ilan oluştur (createdBy, admin kullanıcının ID'si olacak)
+
+    // Yeni property oluştur
     const newProperty = new Property({
       title,
       description,
       price,
-      location,
-      features,
+      address: address || "",
+      city,
+      location: location || {},
       type,
       status,
+      roomCount: roomCount || 0,
+      bathroomCount: bathroomCount || 0,
+      area: area || 0,
+      floorCount: floorCount || 0,
+      floorNumber: floorNumber || 0,
+      bedroomCount: bedroomCount || 0,
+      buildingAge: buildingAge || 0,
+      heatingType: heatingType || "none",
+      features: features || [],
       images: images || [],
-      createdBy: adminUser._id,
-      isApproved: isApproved || false,
+      // Moderatörler ilan eklerken her zaman onaysız olarak eklenecek
+      isApproved: adminUser.role === "admin" ? (isApproved || false) : false,
       isFeatured: isFeatured || false,
+      createdBy: adminUser._id,
     });
-    
+
     await newProperty.save();
-    
+
     return NextResponse.json(
-      { message: "İlan başarıyla oluşturuldu", property: newProperty },
+      { 
+        message: "İlan başarıyla oluşturuldu", 
+        property: newProperty,
+        approvalNote: adminUser.role === "moderator" 
+          ? "Moderatör olarak eklediğiniz ilan onay için admin'e gönderildi."
+          : undefined
+      },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("İlan oluşturma hatası:", error);
     return NextResponse.json(
-      { error: "İlan oluşturulurken bir hata oluştu" },
+      { error: "İlan oluşturulurken bir hata meydana geldi" },
       { status: 500 }
     );
   }

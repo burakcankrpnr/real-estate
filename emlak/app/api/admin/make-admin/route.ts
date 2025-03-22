@@ -50,10 +50,17 @@ export async function POST(request: NextRequest) {
       return authResult; // Hata durumunda response döndür
     }
 
-    const { email } = await request.json();
+    const { email, role = "admin" } = await request.json();
     if (!email) {
       return NextResponse.json(
         { error: "Email gerekli!" },
+        { status: 400 }
+      );
+    }
+
+    if (!["admin", "moderator", "user"].includes(role)) {
+      return NextResponse.json(
+        { error: "Geçersiz rol! Rol 'admin', 'moderator' veya 'user' olmalıdır." },
         { status: 400 }
       );
     }
@@ -68,13 +75,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kullanıcıya admin rolü ata
-    user.role = "admin";
+    // Kullanıcıya belirtilen rolü ata
+    user.role = role;
     await user.save();
+
+    const roleDisplayName = {
+      "admin": "admin",
+      "moderator": "moderatör",
+      "user": "normal kullanıcı"
+    }[role];
 
     return NextResponse.json(
       {
-        message: "Kullanıcı başarıyla admin yapıldı!",
+        message: `Kullanıcı başarıyla ${roleDisplayName} yapıldı!`,
         user: {
           _id: user._id,
           name: user.name,
@@ -85,7 +98,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Admin yapma hatası:", err);
+    console.error("Rol değiştirme hatası:", err);
     return NextResponse.json({ error: "İşlem sırasında bir hata oluştu." }, { status: 500 });
   }
 } 

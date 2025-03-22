@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 const UsersPage = () => {
@@ -18,6 +19,9 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   // Kullanıcı bilgilerini localStorage'dan al
@@ -29,12 +33,14 @@ const UsersPage = () => {
         try {
           const parsedUser = JSON.parse(storedUser);
           
-          if (parsedUser.role === "admin" || parsedUser.role === "moderator") {
+          if (parsedUser.role === "admin") {
             setUser(parsedUser);
             fetchUsers();
           } else {
             // Yetkisiz kullanıcıyı ana sayfaya yönlendir
-            router.push("/");
+            setError("Bu sayfaya erişim yetkiniz bulunmamaktadır. Sadece admin erişebilir.");
+            toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır. Sadece admin erişebilir.");
+            router.push("/Admin"); // Admin paneline geri döndür
           }
         } catch (error) {
           console.error("Kullanıcı verileri ayrıştırılamadı:", error);
@@ -55,12 +61,20 @@ const UsersPage = () => {
       setError(null);
       
       console.log("Kullanıcılar yükleniyor...");
-      const response = await fetch("/api/users", {
-        method: "GET",
+
+      // LocalStorage'dan kullanıcı bilgisini alın
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+
+      const response = await fetch("/api/admin/users", {
         headers: {
-          "Content-Type": "application/json",
+          "user-id": userId || "",
         },
-        cache: "no-store",
       });
       
       if (!response.ok) {
@@ -72,8 +86,8 @@ const UsersPage = () => {
       const data = await response.json();
       console.log("Kullanıcılar başarıyla yüklendi:", data);
       
-      if (Array.isArray(data.users)) {
-        setUsers(data.users);
+      if (Array.isArray(data)) {
+        setUsers(data);
       } else {
         console.error("API'den beklenmeyen veri formatı:", data);
         throw new Error("Kullanıcı verileri alınırken bir sorun oluştu");
@@ -89,12 +103,22 @@ const UsersPage = () => {
 
   const makeAdmin = async (email: string) => {
     try {
+      // LocalStorage'dan kullanıcı bilgisini alın
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+
       const response = await fetch("/api/admin/make-admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "user-id": userId || "",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, role: "admin" }),
       });
 
       if (response.ok) {
@@ -110,6 +134,127 @@ const UsersPage = () => {
       toast.error("Bir hata oluştu.");
     }
   };
+
+  const makeModerator = async (email: string) => {
+    try {
+      // LocalStorage'dan kullanıcı bilgisini alın
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+
+      const response = await fetch("/api/admin/make-admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": userId || "",
+        },
+        body: JSON.stringify({ email, role: "moderator" }),
+      });
+
+      if (response.ok) {
+        toast.success("Kullanıcı başarıyla moderatör yapıldı!");
+        // Kullanıcı listesini yenile
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("Moderatör yapma hatası:", error);
+      toast.error("Bir hata oluştu.");
+    }
+  };
+
+  const makeUser = async (email: string) => {
+    try {
+      // LocalStorage'dan kullanıcı bilgisini alın
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+
+      const response = await fetch("/api/admin/make-admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": userId || "",
+        },
+        body: JSON.stringify({ email, role: "user" }),
+      });
+
+      if (response.ok) {
+        toast.success("Kullanıcı başarıyla normal kullanıcı yapıldı!");
+        // Kullanıcı listesini yenile
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("Normal kullanıcı yapma hatası:", error);
+      toast.error("Bir hata oluştu.");
+    }
+  };
+
+  // Kullanıcı silme işlemi
+  const deleteUser = async (userId: string, userEmail: string) => {
+    // Kullanıcı kendisini silmeye çalışıyorsa engelle
+    if (user && userId === user._id) {
+      toast.error("Kendinizi silemezsiniz!");
+      return;
+    }
+    
+    // Silme işlemini onaylama
+    if (!confirm(`${userEmail} kullanıcısını silmek istediğinize emin misiniz?`)) {
+      return; // Kullanıcı iptal etti
+    }
+
+    try {
+      // LocalStorage'dan kullanıcı bilgisini al
+      const storedUser = localStorage.getItem("user");
+      let adminId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        adminId = parsedUser._id;
+      }
+
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": adminId || "",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message || "Kullanıcı başarıyla silindi!");
+        // Kullanıcı listesini yenile
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Kullanıcı silinirken bir hata oluştu.");
+      }
+    } catch (error: any) {
+      console.error("Kullanıcı silme hatası:", error);
+      toast.error("Kullanıcı silinirken bir hata oluştu: " + (error.message || "Bilinmeyen hata"));
+    }
+  };
+
+  // Arama işlemi için filtreleme fonksiyonu
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -127,19 +272,40 @@ const UsersPage = () => {
     <div className="container mx-auto py-12 px-4">
       <Toaster position="top-right" />
       
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="mb-2 text-3xl font-bold dark:text-white">Kullanıcı Yönetimi</h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Sistemdeki tüm kullanıcıları görüntüleyin ve yönetin.
+          <h1 className="text-3xl font-bold text-dark dark:text-white">Kullanıcılar</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">
+            Tüm kayıtlı kullanıcıları ve rollerini yönetin.
           </p>
         </div>
-        <Link 
-          href="/Admin" 
-          className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 transition hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-        >
-          Admin Paneline Dön
-        </Link>
+        
+        <div className="flex w-full items-center gap-4 md:w-auto">
+  <div className="relative flex-grow">
+    <input
+      type="text"
+      placeholder="Kullanıcı ara..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pr-10 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+    />
+    <svg
+      className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-300"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  </div>
+</div>
+
       </div>
 
       {error && (
@@ -169,78 +335,124 @@ const UsersPage = () => {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg bg-white shadow-md dark:bg-gray-800">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                Ad Soyad
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                E-posta
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                Rol
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                Kayıt Tarihi
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                İşlemler
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-            {users.length > 0 ? (
-              users.map((user: User) => (
-                <tr key={user._id}>
+      {filteredUsers.length === 0 ? (
+        <div className="rounded-lg bg-gray-50 p-8 text-center dark:bg-gray-800">
+          <p className="text-lg text-gray-500 dark:text-gray-400">
+            {searchTerm ? "Arama kriterlerinize uygun kullanıcı bulunamadı." : "Hiç kullanıcı bulunamadı."}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Kullanıcı
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Rol
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Kayıt Tarihi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Son Güncelleme
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  İşlemler
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+              {filteredUsers.map((userItem) => (
+                <tr key={userItem._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 flex-shrink-0">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-xl text-white">
+                          {userItem.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{userItem.name}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-300">{user.email}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-300">{userItem.email}</div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      user.role === 'admin' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
-                        : user.role === 'moderator'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      userItem.role === "admin"
+                        ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                        : userItem.role === "moderator"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                        : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                     }`}>
-                      {user.role || "üye"}
+                      {userItem.role === "admin" ? "Admin" : userItem.role === "moderator" ? "Moderatör" : "Kullanıcı"}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-300">
-                      {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                    {new Date(userItem.createdAt).toLocaleDateString('tr-TR')}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                    {new Date(userItem.updatedAt).toLocaleDateString('tr-TR')}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => makeAdmin(userItem.email)}
+                        disabled={userItem.role === 'admin'}
+                        className={`rounded-md ${
+                          userItem.role === 'admin'
+                            ? 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'
+                        } px-3 py-1 text-sm transition-colors`}
+                      >
+                        {userItem.role === 'admin' ? 'Admin' : 'Admin Yap'}
+                      </button>
+                      <button
+                        onClick={() => makeModerator(userItem.email)}
+                        disabled={userItem.role === 'moderator'}
+                        className={`rounded-md ${
+                          userItem.role === 'moderator'
+                            ? 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600'
+                        } px-3 py-1 text-sm transition-colors`}
+                      >
+                        {userItem.role === 'moderator' ? 'Moderatör' : 'Moderatör Yap'}
+                      </button>
+                      <button
+                        onClick={() => makeUser(userItem.email)}
+                        disabled={!userItem.role || userItem.role === 'user'}
+                        className={`rounded-md ${
+                          !userItem.role || userItem.role === 'user'
+                            ? 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            : 'bg-gray-600 text-white hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500'
+                        } px-3 py-1 text-sm transition-colors`}
+                      >
+                        {!userItem.role || userItem.role === 'user' ? 'Kullanıcı' : 'Üye Yap'}
+                      </button>
+                      {/* Kullanıcı silme butonu - kendi hesabını silemez */}
+                      {user && user._id !== userItem._id && (
+                        <button
+                          onClick={() => deleteUser(userItem._id, userItem.email)}
+                          className="rounded-md bg-red-600 px-3 py-1 text-sm text-white transition-colors hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
+                        >
+                          Sil
+                        </button>
+                      )}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                    <button
-                      onClick={() => makeAdmin(user.email)}
-                      disabled={user.role === 'admin'}
-                      className={`mr-2 rounded-md ${
-                        user.role === 'admin'
-                          ? 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                          : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'
-                      } px-3 py-1 text-sm transition-colors`}
-                    >
-                      {user.role === 'admin' ? 'Zaten Admin' : 'Admin Yap'}
-                    </button>
-                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-300">
-                  {error ? "Kullanıcı verisi yüklenemedi." : "Kullanıcı bulunamadı."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

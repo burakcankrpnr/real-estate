@@ -195,6 +195,7 @@ const Header = () => {
     setUser(null)
     window.dispatchEvent(new Event("userChanged"))
     closeLogoutModal()
+    window.location.href = "/"
   }
 
   // Get user initials for avatar
@@ -628,6 +629,7 @@ const Header = () => {
                               <Link
                                 href="/hesabim"
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                onClick={() => setDesktopUserMenuOpen(false)}
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -643,6 +645,7 @@ const Header = () => {
                               <Link
                                 href="/favoriler"
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                onClick={() => setDesktopUserMenuOpen(false)}
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -661,6 +664,7 @@ const Header = () => {
                                 <Link
                                   href="/Admin"
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                  onClick={() => setDesktopUserMenuOpen(false)}
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -769,6 +773,7 @@ const Header = () => {
                             <Link
                               href="/hesabim"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                              onClick={() => setMobileUserMenuOpen(false)}
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -784,6 +789,7 @@ const Header = () => {
                             <Link
                               href="/favoriler"
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                              onClick={() => setMobileUserMenuOpen(false)}
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -802,6 +808,7 @@ const Header = () => {
                               <Link
                                 href="/Admin"
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                                onClick={() => setMobileUserMenuOpen(false)}
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"

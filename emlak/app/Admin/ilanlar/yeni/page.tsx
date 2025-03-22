@@ -18,10 +18,23 @@ interface PropertyFormData {
     rooms: string;
     bathrooms: string;
     area: string;
+    floors?: string;
+    floor?: string;
+    bedrooms?: string;
+    buildingAge?: string;
+    heating?: string;
     hasGarage: boolean;
     hasGarden: boolean;
     hasPool: boolean;
     isFurnished: boolean;
+    hasAirConditioning?: boolean;
+    hasBalcony?: boolean;
+    hasElevator?: boolean;
+    hasSecurity?: boolean;
+    hasInternet?: boolean;
+    hasSatelliteTV?: boolean;
+    hasFittedKitchen?: boolean;
+    hasParentalBathroom?: boolean;
   };
   extraFeatures?: string[];
   type: string;
@@ -49,10 +62,23 @@ const NewPropertyPage = () => {
       rooms: "",
       bathrooms: "",
       area: "",
+      floors: "",
+      floor: "",
+      bedrooms: "",
+      buildingAge: "",
+      heating: "",
       hasGarage: false,
       hasGarden: false,
       hasPool: false,
       isFurnished: false,
+      hasAirConditioning: false,
+      hasBalcony: false,
+      hasElevator: false,
+      hasSecurity: false,
+      hasInternet: false,
+      hasSatelliteTV: false,
+      hasFittedKitchen: false,
+      hasParentalBathroom: false,
     },
     extraFeatures: [],
     type: "apartment",
@@ -100,7 +126,7 @@ const NewPropertyPage = () => {
       setForm((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof PropertyFormData],
+          ...(prev[parent as keyof typeof prev] as Record<string, any>),
           [child]: value,
         },
       }));
@@ -242,8 +268,31 @@ const NewPropertyPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!form.title || !form.description || !form.price || !form.location.city || !form.location.district || !form.features.area) {
-      toast.error("Lütfen zorunlu alanları doldurunuz.");
+    // Zorunlu alanlar ve validasyon kontrolü
+    const requiredFields = {
+      "başlık": form.title,
+      "açıklama": form.description,
+      "fiyat": form.price,
+      "şehir": form.location.city,
+      "ilçe": form.location.district,
+      "adres": form.location.address,
+      "alan": form.features.area,
+      "oda sayısı": form.features.rooms,
+      "banyo sayısı": form.features.bathrooms
+    };
+    
+    // Her bir zorunlu alanı kontrol edip eksik olanları bildirelim
+    const emptyFields: string[] = [];
+    
+    for (const [fieldName, fieldValue] of Object.entries(requiredFields)) {
+      // Değer undefined, null veya boş string ise
+      if (fieldValue === undefined || fieldValue === null || (typeof fieldValue === 'string' && fieldValue.trim() === '')) {
+        emptyFields.push(fieldName);
+      }
+    }
+    
+    if (emptyFields.length > 0) {
+      toast.error(`Lütfen şu zorunlu alanları doldurunuz: ${emptyFields.join(", ")}`);
       return;
     }
     
@@ -255,9 +304,13 @@ const NewPropertyPage = () => {
         price: parseFloat(form.price),
         features: {
           ...form.features,
-          rooms: form.features.rooms ? parseInt(form.features.rooms) : 0,
-          bathrooms: form.features.bathrooms ? parseInt(form.features.bathrooms) : 0,
-          area: form.features.area ? parseFloat(form.features.area) : 0,
+          rooms: form.features.rooms ? parseInt(form.features.rooms.toString()) : 0,
+          bathrooms: form.features.bathrooms ? parseInt(form.features.bathrooms.toString()) : 0,
+          area: form.features.area ? parseFloat(form.features.area.toString()) : 0,
+          floors: form.features.floors ? parseInt(form.features.floors?.toString() || '') : undefined,
+          floor: form.features.floor ? parseInt(form.features.floor?.toString() || '') : undefined,
+          bedrooms: form.features.bedrooms ? parseInt(form.features.bedrooms?.toString() || '') : undefined,
+          buildingAge: form.features.buildingAge ? parseInt(form.features.buildingAge?.toString() || '') : undefined,
         },
       };
       
@@ -310,7 +363,7 @@ const NewPropertyPage = () => {
       
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold dark:text-white">Yeni İlan Ekle</h1>
+          <h1 className="text-3xl font-bold text-dark dark:text-white">Yeni İlan Ekle</h1>
           <p className="mt-2 text-gray-600 dark:text-gray-300">
             Sisteme yeni bir emlak ilanı ekleyin.
           </p>
@@ -327,12 +380,12 @@ const NewPropertyPage = () => {
         <form onSubmit={handleSubmit}>
           {/* Temel Bilgiler */}
           <div className="mb-6">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Temel Bilgiler</h2>
+            <h2 className="mb-4 text-xl font-semibold  text-dark dark:text-white">Temel Bilgiler</h2>
             
             <div className="mb-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  İlan Başlığı *
+                  İlan Başlığı <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -340,14 +393,16 @@ const NewPropertyPage = () => {
                   name="title"
                   value={form.title}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
+                  placeholder="Örn: Deniz Manzaralı 3+1 Daire"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Dikkat çekici ve açıklayıcı bir başlık yazın.</p>
               </div>
               
               <div>
                 <label htmlFor="price" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Fiyat (₺) *
+                  Fiyat (₺) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -355,15 +410,17 @@ const NewPropertyPage = () => {
                   name="price"
                   value={form.price}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
+                  placeholder="Örn: 1500000"
+                  min="0"
                 />
               </div>
             </div>
             
             <div className="mb-4">
               <label htmlFor="description" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Açıklama *
+                Açıklama <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
@@ -371,24 +428,27 @@ const NewPropertyPage = () => {
                 value={form.description}
                 onChange={handleChange}
                 rows={5}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                 required
+                placeholder="Emlak hakkında detaylı bilgi verin. Konum, iç özellikler, dış özellikler gibi önemli noktaları belirtin."
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Detaylı bir açıklama potansiyel alıcıların ilgisini artırır.</p>
             </div>
             
             <div className="mb-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Emlak Tipi *
+                  Emlak Tipi <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="type"
                   name="type"
                   value={form.type}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
                 >
+                  <option value="">Seçiniz</option>
                   <option value="apartment">Daire</option>
                   <option value="house">Müstakil Ev</option>
                   <option value="villa">Villa</option>
@@ -399,16 +459,17 @@ const NewPropertyPage = () => {
               
               <div>
                 <label htmlFor="status" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Satılık/Kiralık *
+                  Satılık/Kiralık <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="status"
                   name="status"
                   value={form.status}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
                 >
+                  <option value="">Seçiniz</option>
                   <option value="for-sale">Satılık</option>
                   <option value="for-rent">Kiralık</option>
                 </select>
@@ -418,12 +479,12 @@ const NewPropertyPage = () => {
           
           {/* Konum Bilgileri */}
           <div className="mb-6">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Konum Bilgileri</h2>
+            <h2 className="mb-4 text-xl font-semibold dark:text-white text-dark">Konum Bilgileri</h2>
             
             <div className="mb-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="location.city" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Şehir *
+                  Şehir <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -431,14 +492,15 @@ const NewPropertyPage = () => {
                   name="location.city"
                   value={form.location.city}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
+                  placeholder="Örn: İstanbul"
                 />
               </div>
               
               <div>
                 <label htmlFor="location.district" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  İlçe/Semt *
+                  İlçe/Semt <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -446,15 +508,16 @@ const NewPropertyPage = () => {
                   name="location.district"
                   value={form.location.district}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
+                  placeholder="Örn: Kadıköy"
                 />
               </div>
             </div>
             
             <div>
               <label htmlFor="location.address" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Açık Adres
+                Açık Adres <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="location.address"
@@ -462,122 +525,198 @@ const NewPropertyPage = () => {
                 value={form.location.address}
                 onChange={handleChange}
                 rows={3}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                required
+                placeholder="Tam adres bilgilerini yazın"
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Mahalle, cadde ve bina numarası gibi detayları ekleyin.</p>
             </div>
           </div>
           
           {/* Detaylar */}
-          <div className="mb-6">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Detaylar</h2>
+          <div className="mb-8">
+            <h2 className="mb-4 text-xl font-semibold dark:text-white text-dark">Emlak Özellikleri</h2>
             
-            <div className="mb-4 grid gap-4 md:grid-cols-3">
-              <div>
-                <label htmlFor="features.area" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Alan (m²) *
-                </label>
-                <input
-                  type="number"
-                  id="features.area"
-                  name="features.area"
-                  value={form.features.area}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="features.rooms" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Yatak Odası Sayısı
-                </label>
-                <input
-                  type="number"
-                  id="features.rooms"
-                  name="features.rooms"
-                  value={form.features.rooms}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="features.bathrooms" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Banyo Sayısı
-                </label>
-                <input
-                  type="number"
-                  id="features.bathrooms"
-                  name="features.bathrooms"
-                  value={form.features.bathrooms}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                />
-              </div>
-            </div>
+            <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {/* Alan */}
+  <div>
+    <label htmlFor="features.area" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Alan (m²) <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="number"
+      id="features.area"
+      name="features.area"
+      value={form.features.area}
+      onChange={handleChange}
+      placeholder="Örn: 120"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+      required
+    />
+  </div>
 
-            <div className="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="features.hasGarage"
-                  name="features.hasGarage"
-                  checked={form.features.hasGarage}
-                  onChange={handleFeatureCheckboxChange}
-                  className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
-                />
-                <label htmlFor="features.hasGarage" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Garaj
-                </label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="features.hasGarden"
-                  name="features.hasGarden"
-                  checked={form.features.hasGarden}
-                  onChange={handleFeatureCheckboxChange}
-                  className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
-                />
-                <label htmlFor="features.hasGarden" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Bahçe
-                </label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="features.hasPool"
-                  name="features.hasPool"
-                  checked={form.features.hasPool}
-                  onChange={handleFeatureCheckboxChange}
-                  className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
-                />
-                <label htmlFor="features.hasPool" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Havuz
-                </label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="features.isFurnished"
-                  name="features.isFurnished"
-                  checked={form.features.isFurnished}
-                  onChange={handleFeatureCheckboxChange}
-                  className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
-                />
-                <label htmlFor="features.isFurnished" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Eşyalı
-                </label>
-              </div>
-            </div>
+  {/* Oda Sayısı */}
+  <div>
+    <label htmlFor="features.rooms" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Oda Sayısı <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="number"
+      id="features.rooms"
+      name="features.rooms"
+      value={form.features.rooms}
+      onChange={handleChange}
+      placeholder="Örn: 3"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+      required
+    />
+  </div>
+
+  {/* Banyo Sayısı */}
+  <div>
+    <label htmlFor="features.bathrooms" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Banyo Sayısı <span className="text-red-500">*</span>
+    </label>
+    <input
+      type="number"
+      id="features.bathrooms"
+      name="features.bathrooms"
+      value={form.features.bathrooms}
+      onChange={handleChange}
+      placeholder="Örn: 2"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+      required
+    />
+  </div>
+
+  {/* Yatak Odası Sayısı */}
+  <div>
+    <label htmlFor="features.bedrooms" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Yatak Odası Sayısı
+    </label>
+    <input
+      type="number"
+      id="features.bedrooms"
+      name="features.bedrooms"
+      value={form.features.bedrooms || ""}
+      onChange={handleChange}
+      placeholder="Örn: 2"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+    />
+  </div>
+
+  {/* Kat Sayısı */}
+  <div>
+    <label htmlFor="features.floors" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Kat Sayısı
+    </label>
+    <input
+      type="number"
+      id="features.floors"
+      name="features.floors"
+      value={form.features.floors || ""}
+      onChange={handleChange}
+      placeholder="Örn: 3"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+    />
+  </div>
+
+  {/* Bulunduğu Kat */}
+  <div>
+    <label htmlFor="features.floor" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Bulunduğu Kat
+    </label>
+    <input
+      type="number"
+      id="features.floor"
+      name="features.floor"
+      value={form.features.floor || ""}
+      onChange={handleChange}
+      placeholder="Örn: 2"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+    />
+  </div>
+
+  {/* Bina Yaşı */}
+  <div>
+    <label htmlFor="features.buildingAge" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Bina Yaşı
+    </label>
+    <input
+      type="number"
+      id="features.buildingAge"
+      name="features.buildingAge"
+      value={form.features.buildingAge || ""}
+      onChange={handleChange}
+      placeholder="Örn: 5"
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black placeholder-gray-500 focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+    />
+  </div>
+
+  {/* Isıtma */}
+  <div>
+    <label htmlFor="features.heating" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Isıtma
+    </label>
+    <select
+      id="features.heating"
+      name="features.heating"
+      value={form.features.heating || ""}
+      onChange={handleChange}
+      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-black focus:border-primary focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+    >
+      <option value="">Seçiniz</option>
+      <option value="kombi">Kombi</option>
+      <option value="merkezi">Merkezi</option>
+      <option value="dogalgaz">Doğalgaz</option>
+      <option value="soba">Soba</option>
+      <option value="klima">Klima</option>
+      <option value="yok">Isıtma Yok</option>
+    </select>
+  </div>
+</div>
+
+            
+            <h3 className="mb-4 mt-6 text-lg font-medium dark:text-white text-dark">Emlak Özellikleri</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+  {[
+    { id: "hasGarage", label: "Garaj / Otopark" },
+    { id: "hasGarden", label: "Bahçe" },
+    { id: "hasPool", label: "Havuz" },
+    { id: "isFurnished", label: "Eşyalı" },
+    { id: "hasAirConditioning", label: "Klima" },
+    { id: "hasBalcony", label: "Balkon" },
+    { id: "hasElevator", label: "Asansör" },
+    { id: "hasSecurity", label: "Güvenlik" },
+    { id: "hasInternet", label: "İnternet" },
+    { id: "hasSatelliteTV", label: "Uydu TV" },
+    { id: "hasFittedKitchen", label: "Ankastre Mutfak" },
+    { id: "hasParentalBathroom", label: "Ebeveyn Banyosu" },
+  ].map(({ id, label }) => (
+    <div key={id} className="flex items-center">
+      <input
+        type="checkbox"
+        id={`features.${id}`}
+        name={`features.${id}`}
+        checked={form.features[id] || false}
+        onChange={handleFeatureCheckboxChange}
+        className="h-4 w-4 rounded border-gray-300 bg-white text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-primary dark:focus:ring-primary"
+      />
+      <label
+        htmlFor={`features.${id}`}
+        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+      >
+        {label}
+      </label>
+    </div>
+  ))}
+</div>
+
           </div>
           
           {/* Özellikler */}
           <div className="mb-6">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Ekstra Özellikler</h2>
+            <h2 className="mb-4 text-xl font-semibold dark:text-white text-dark">Ekstra Özellikler</h2>
             
             <div className="mb-4 flex">
               <input
@@ -622,11 +761,11 @@ const NewPropertyPage = () => {
           
           {/* Resimler */}
           <div className="mb-6">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Resimler</h2>
+            <h2 className="mb-4 text-xl font-semibold dark:text-white text-dark">Resimler</h2>
             
             {/* Resim URL'si ile ekleme */}
             <div className="mb-4">
-              <h3 className="mb-2 text-md font-medium dark:text-white">URL ile ekle</h3>
+              <h3 className="mb-2 text-md font-medium dark:text-white text-dark">URL ile ekle</h3>
               <div className="flex">
                 <input
                   type="text"
@@ -648,7 +787,7 @@ const NewPropertyPage = () => {
 
             {/* Dosya yükleme */}
             <div className="mb-6">
-              <h3 className="mb-2 text-md font-medium dark:text-white">Dosya yükle</h3>
+              <h3 className="mb-2 text-md font-medium dark:text-white text-dark">Dosya yükle</h3>
               <div className="mb-2">
                 <input
                   type="file"
@@ -694,22 +833,25 @@ const NewPropertyPage = () => {
           
           {/* Yayın Durumu */}
           <div className="mb-8">
-            <h2 className="mb-4 text-xl font-semibold dark:text-white">Yayın Durumu</h2>
+            <h2 className="mb-4 text-xl font-semibold dark:text-white text-dark">Yayın Durumu</h2>
             
             <div className="space-y-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isApproved"
-                  name="isApproved"
-                  checked={form.isApproved}
-                  onChange={handleCheckboxChange}
-                  className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
-                />
-                <label htmlFor="isApproved" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  İlanı onaylı olarak yayınla
-                </label>
-              </div>
+              {/* İlan onaylama kontrolü - sadece adminler için görünür */}
+              {user && user.role === 'admin' && (
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isApproved"
+                    name="isApproved"
+                    checked={form.isApproved}
+                    onChange={handleCheckboxChange}
+                    className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:focus:ring-primary"
+                  />
+                  <label htmlFor="isApproved" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    İlanı onaylı olarak yayınla
+                  </label>
+                </div>
+              )}
               
               <div className="flex items-center">
                 <input

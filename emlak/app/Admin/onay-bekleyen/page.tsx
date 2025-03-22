@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
+import { Dialog, Transition } from '@headlessui/react';
+import Breadcrumb from '@/components/Common/AdminBreadcrumb';
+import Loader from '@/components/loader';
 
 interface Property {
   _id: string;
@@ -12,7 +15,11 @@ interface Property {
   description: string;
   price: number;
   images: string[];
-  location: string;
+  location: {
+    city?: string;
+    district?: string;
+    address?: string;
+  };
   features: {
     bedrooms: number;
     bathrooms: number;
@@ -45,7 +52,10 @@ const PendingApprovalsPage = () => {
             setUser(parsedUser);
             fetchPendingProperties();
           } else {
-            router.push("/");
+            // Yetkisiz kullanıcı
+            setError("Bu sayfaya erişim yetkiniz bulunmamaktadır. Sadece admin ve moderatörler erişebilir.");
+            toast.error("Bu sayfaya erişim yetkiniz bulunmamaktadır. Sadece admin ve moderatörler erişebilir.");
+            router.push("/Admin");
           }
         } catch (error) {
           console.error("Kullanıcı verileri ayrıştırılamadı:", error);
@@ -65,10 +75,21 @@ const PendingApprovalsPage = () => {
       setError(null);
       
       console.log("Onay bekleyen ilanlar yükleniyor...");
-      const response = await fetch("/api/admin/pending-properties", {
+      
+      // User ID'yi localStorage'dan al
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+      
+      const response = await fetch("/api/admin/properties?pending=true", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "user-id": userId || "",
         },
         cache: "no-store",
       });
@@ -99,49 +120,143 @@ const PendingApprovalsPage = () => {
 
   const approveProperty = async (id: string) => {
     try {
+      // User ID'yi localStorage'dan al
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+      
       const response = await fetch(`/api/admin/approve-property/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "user-id": userId || "", // Admin kontrolü için user-id eklendi
         },
       });
 
       if (response.ok) {
-        toast.success("İlan başarıyla onaylandı!");
+        toast.success("İlan başarıyla onaylandı! İlan artık ana sayfada görüntülenecek.");
         // İlanları yenile
         fetchPendingProperties();
       } else {
         const data = await response.json();
-        toast.error(data.error || "Bir hata oluştu.");
+        toast.error(data.error || "İlan onaylanırken bir hata oluştu.");
       }
     } catch (error) {
       console.error("İlan onaylama hatası:", error);
-      toast.error("Bir hata oluştu.");
+      toast.error("İlan onaylanırken bir hata oluştu.");
     }
   };
 
-  const deleteProperty = async (id: string) => {
-    if (window.confirm("Bu ilanı silmek istediğinize emin misiniz?")) {
-      try {
-        const response = await fetch(`/api/admin/properties/${id}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+  // İlan silme için state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
 
-        if (response.ok) {
-          toast.success("İlan başarıyla silindi!");
-          // İlanları yenile
-          fetchPendingProperties();
-        } else {
-          const data = await response.json();
-          toast.error(data.error || "Bir hata oluştu.");
-        }
-      } catch (error) {
-        console.error("İlan silme hatası:", error);
-        toast.error("Bir hata oluştu.");
+  // İlan silme onay modali açma
+  const openDeleteModal = (id: string) => {
+    setPropertyToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const deleteProperty = async (id: string) => {
+    try {
+      // User ID'yi localStorage'dan al
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
       }
+      
+      const response = await fetch(`/api/admin/properties/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": userId || "", // Admin kontrolü için user-id eklendi
+        },
+      });
+
+      if (response.ok) {
+        toast.success("İlan başarıyla silindi! İlan artık sistemde bulunmuyor.");
+        // İlanları yenile
+        fetchPendingProperties();
+        // Modalı kapat
+        setIsDeleteModalOpen(false);
+        setPropertyToDelete(null);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "İlan silinirken bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("İlan silme hatası:", error);
+      toast.error("İlan silinirken bir hata oluştu.");
+    }
+  };
+
+  // İşlem butonlarını render eden fonksiyon
+  const renderActionButtons = (property: Property) => {
+    // Sadece adminler onaylama butonunu görebilir
+    if (user?.role === "admin") {
+      return (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => approveProperty(property._id)}
+            className="rounded-md bg-green-600 px-3 py-1 text-sm text-white transition hover:bg-green-700"
+            title="Onayla"
+          >
+            <svg 
+              className="h-5 w-5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => openDeleteModal(property._id)}
+            className="rounded-md bg-red-600 px-3 py-1 text-sm text-white transition hover:bg-red-700"
+            title="Sil"
+          >
+            <svg 
+              className="h-5 w-5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      );
+    } else {
+      // Moderatörler kendi ilanlarını silebilir, ancak onaylayamazlar
+      return (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => openDeleteModal(property._id)}
+            className="rounded-md bg-red-600 px-3 py-1 text-sm text-white transition hover:bg-red-700"
+            title="Sil"
+          >
+            <svg 
+              className="h-5 w-5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      );
     }
   };
 
@@ -165,7 +280,9 @@ const PendingApprovalsPage = () => {
         <div>
           <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Onay Bekleyen İlanlar</h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Sisteme eklenen ve onay bekleyen tüm ilanlar.
+            {user?.role === "admin" 
+              ? "Sisteme eklenen ve onay bekleyen tüm ilanlar."
+              : "Eklediğiniz ve onay bekleyen ilanlarınız."}
           </p>
         </div>
         <Link 
@@ -265,7 +382,11 @@ const PendingApprovalsPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="truncate">{property.location}</span>
+                  <span className="truncate">
+                    {typeof property.location === 'object' 
+                      ? `${property.location.city || ''}, ${property.location.district || ''}` 
+                      : property.location || ''}
+                  </span>
                 </div>
                 
                 <div className="mb-4 flex justify-between text-gray-700 dark:text-gray-300">
@@ -342,46 +463,94 @@ const PendingApprovalsPage = () => {
                     {property.price.toLocaleString('tr-TR')} ₺
                   </span>
                   
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => approveProperty(property._id)}
-                      className="rounded-md bg-green-600 px-3 py-1 text-sm text-white transition hover:bg-green-700"
-                      title="Onayla"
-                    >
-                      <svg 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24" 
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                    
-                    <button
-                      onClick={() => deleteProperty(property._id)}
-                      className="rounded-md bg-red-600 px-3 py-1 text-sm text-white transition hover:bg-red-700"
-                      title="Sil"
-                    >
-                      <svg 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24" 
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  {renderActionButtons(property)}
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => propertyToDelete && deleteProperty(propertyToDelete)}
+      />
     </div>
+  );
+};
+
+// İlan silme onay modali
+const DeleteConfirmationModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onConfirm: () => void; 
+}) => {
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-10" onClose={onClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-25" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-800">
+                <Dialog.Title
+                  as="h3"
+                  className="text-lg font-medium leading-6 text-gray-900 dark:text-white"
+                >
+                  İlanı Sil
+                </Dialog.Title>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Bu ilanı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve ilan tamamen sistemden silinecektir.
+                  </p>
+                </div>
+
+                <div className="mt-5 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    className="inline-flex justify-center rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                    onClick={onClose}
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    onClick={onConfirm}
+                  >
+                    Evet, Sil
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   );
 };
 

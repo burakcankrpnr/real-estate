@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
     "bcryptjs": "^3.0.2",
     "eslint": "8.33.0",
     "eslint-config-next": "13.1.6",

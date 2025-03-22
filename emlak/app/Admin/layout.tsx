@@ -3,7 +3,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import Breadcrumb from "@/components/Common/Breadcrumb";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -75,11 +74,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Üst Menü - Ana header'ın altında kalacak şekilde ayarlandı */}
       
       <header className="bg-white shadow-sm dark:bg-gray-800 fixed left-0 right-0 top-[80px] z-30">
-
+        {/* Üst menü içeriği buraya gelecek */}
+        
       </header>
 
       {/* Ana İçerik - Admin header'ından sonra başlayacak şekilde margin ekledik */}
-      <main className="container mx-auto p-4 mt-14 flex-grow">
+      <main className="container mx-auto p-0 mt-0 flex-grow">
         {children}
       </main>
 
