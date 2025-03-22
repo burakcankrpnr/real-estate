@@ -239,6 +239,12 @@ const NewPropertyPage = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // API'den gelen hata mesajlarını daha iyi göster
+        if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
+          throw new Error(`Eksik alanlar: ${errorData.missingFields.join(', ')}`);
+        }
+        
         throw new Error(errorData.error || "Dosya yüklenirken bir hata oluştu");
       }
       
@@ -325,6 +331,12 @@ const NewPropertyPage = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // API'den gelen hata mesajlarını daha iyi göster
+        if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
+          throw new Error(`Eksik alanlar: ${errorData.missingFields.join(', ')}`);
+        }
+        
         throw new Error(errorData.error || "İlan eklenirken bir hata oluştu");
       }
       

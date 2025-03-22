@@ -10,6 +10,7 @@ interface User {
   _id: string
   name: string
   email: string
+  phone?: string
   role?: string
   profileImage?: string
 }
@@ -135,6 +136,7 @@ const HesabimPage = () => {
         _id: user._id,
         name: formData.name,
         email: formData.email,
+        phone: user.phone,
         role: user.role,
         profileImage: uploadedImageUrl || user.profileImage,
       }
@@ -181,7 +183,7 @@ const HesabimPage = () => {
       
       <div className="container mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hesap Bilgilerim</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white text:dark">Hesap Bilgilerim</h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">Profil bilgilerinizi buradan güncelleyebilirsiniz.</p>
         </div>
         

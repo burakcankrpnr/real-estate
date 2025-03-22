@@ -170,6 +170,48 @@ export async function PUT(
       delete updateData.isApproved;
     }
 
+    // Zorunlu alanları kontrol et
+    const {
+      title,
+      description,
+      price,
+      city,
+      location,
+      type,
+      status,
+      area,
+      features,
+    } = updateData;
+    
+    // Şema doğrulaması için ek kontroller
+    const missingFields: string[] = [];
+    
+    if (!title) missingFields.push("Başlık");
+    if (!description) missingFields.push("Açıklama");
+    if (!price) missingFields.push("Fiyat");
+    
+    // Location kontrolü
+    if (!city) missingFields.push("Şehir");
+    if (!location?.district) missingFields.push("İlçe");
+    if (!location?.address) missingFields.push("Adres");
+    
+    // Features kontrolü  
+    if (!area && (!features || !features.area)) missingFields.push("Alan (m²)");
+    
+    // Diğer zorunlu alanlar
+    if (!type) missingFields.push("Emlak Türü");
+    if (!status) missingFields.push("İlan Durumu");
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { 
+          error: "Lütfen aşağıdaki zorunlu alanları doldurunuz:", 
+          missingFields 
+        },
+        { status: 400 }
+      );
+    }
+
     // İlanı güncelle - yeni alanları ekle
     const updatedProperty = await Property.findByIdAndUpdate(
       params.id,
@@ -256,32 +298,60 @@ export async function PATCH(
       }
     }
     
-    // Güncelleme verileri
-    let updateObject = { ...updateData };
+    // Güncelleme yapılacak verilerin geçerliliğini kontrol et
+    const existingProperty = property.toObject();
+    const mergedData = {
+      ...existingProperty,
+      ...updateData,
+      location: { ...existingProperty.location, ...(updateData.location || {}) },
+      features: { ...existingProperty.features, ...(updateData.features || {}) }
+    };
     
-    // Admin ise veya moderatör kendi ilanını güncelliyorsa onay ve öne çıkarma durumlarını ayarla
-    if (adminUser.role === "admin") {
-      if (data.hasOwnProperty('isApproved')) updateObject.isApproved = isApproved;
-      if (data.hasOwnProperty('isFeatured')) updateObject.isFeatured = isFeatured;
-    } else if (adminUser.role === "moderator" && data.hasOwnProperty('isFeatured')) {
-      updateObject.isFeatured = isFeatured;
+    // Şema doğrulaması için ek kontroller
+    const missingFields: string[] = [];
+    
+    if (!mergedData.title) missingFields.push("Başlık");
+    if (!mergedData.description) missingFields.push("Açıklama");
+    if (!mergedData.price) missingFields.push("Fiyat");
+    
+    // Location kontrolü
+    if (!mergedData.location?.city) missingFields.push("Şehir");
+    if (!mergedData.location?.district) missingFields.push("İlçe");
+    if (!mergedData.location?.address) missingFields.push("Adres");
+    
+    // Features kontrolü
+    const area = updateData.area || mergedData.features?.area;
+    if (!area) missingFields.push("Alan (m²)");
+    
+    // Diğer zorunlu alanlar
+    if (!mergedData.type) missingFields.push("Emlak Türü");
+    if (!mergedData.status) missingFields.push("İlan Durumu");
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { 
+          error: "Lütfen aşağıdaki zorunlu alanları doldurunuz:", 
+          missingFields 
+        },
+        { status: 400 }
+      );
     }
-    
-    // Güncelleme
+
+    // İlanı güncelle - yeni alanları ekle
     const updatedProperty = await Property.findByIdAndUpdate(
       id,
-      updateObject,
+      { $set: mergedData },
       { new: true, runValidators: true }
-    );
-    
-    return NextResponse.json({
-      message: "İlan başarıyla güncellendi",
-      property: updatedProperty,
+    ).populate("createdBy", "name email role");
+
+    return NextResponse.json({ 
+      message: "İlan başarıyla güncellendi", 
+      property: updatedProperty 
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("İlan güncelleme hatası:", error);
     return NextResponse.json(
-      { error: "İlanı güncellerken bir hata oluştu" },
+      { error: "İlan güncellenirken bir hata oluştu" },
       { status: 500 }
     );
   }

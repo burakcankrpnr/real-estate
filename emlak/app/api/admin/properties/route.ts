@@ -159,25 +159,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Şema doğrulaması için ek kontroller
+    const missingFields: string[] = [];
+    
+    if (!title) missingFields.push("Başlık");
+    if (!description) missingFields.push("Açıklama");
+    if (!price) missingFields.push("Fiyat");
+    
+    // Location kontrolü
+    if (!city) missingFields.push("Şehir");
+    if (!location?.district) missingFields.push("İlçe");
+    if (!location?.address) missingFields.push("Adres");
+    
+    // Features kontrolü  
+    if (!area && (!features || !features.area)) missingFields.push("Alan (m²)");
+    
+    // Diğer zorunlu alanlar
+    if (!type) missingFields.push("Emlak Türü");
+    if (!status) missingFields.push("İlan Durumu");
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { 
+          error: "Lütfen aşağıdaki zorunlu alanları doldurunuz:", 
+          missingFields 
+        },
+        { status: 400 }
+      );
+    }
+
     // Yeni property oluştur
     const newProperty = new Property({
       title,
       description,
       price,
-      address: address || "",
-      city,
-      location: location || {},
+      location: {
+        city,
+        district: location?.district || "",
+        address: location?.address || address || "",
+      },
       type,
       status,
-      roomCount: roomCount || 0,
-      bathroomCount: bathroomCount || 0,
-      area: area || 0,
-      floorCount: floorCount || 0,
-      floorNumber: floorNumber || 0,
-      bedroomCount: bedroomCount || 0,
-      buildingAge: buildingAge || 0,
-      heatingType: heatingType || "none",
-      features: features || [],
+      features: {
+        rooms: roomCount || features?.rooms || 0,
+        bathrooms: bathroomCount || features?.bathrooms || 0,
+        area: area || features?.area || 0,
+        hasGarage: features?.hasGarage || false,
+        hasGarden: features?.hasGarden || false,
+        hasPool: features?.hasPool || false,
+        isFurnished: features?.isFurnished || false,
+      },
       images: images || [],
       // Moderatörler ilan eklerken her zaman onaysız olarak eklenecek
       isApproved: adminUser.role === "admin" ? (isApproved || false) : false,

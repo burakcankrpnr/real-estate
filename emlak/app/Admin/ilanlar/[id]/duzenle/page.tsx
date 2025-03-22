@@ -132,8 +132,14 @@ const EditPropertyPage = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Hata kodu: ${response.status}`);
+        const errorData = await response.json();
+        
+        // API'den gelen hata mesajlarını daha iyi göster
+        if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
+          throw new Error(`Eksik alanlar: ${errorData.missingFields.join(', ')}`);
+        }
+        
+        throw new Error(errorData.error || "İlan güncellenirken bir hata oluştu");
       }
       
       const data = await response.json();
