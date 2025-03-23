@@ -625,11 +625,12 @@ const Header = () => {
                             <span className="text-xs text-gray-500">{user.email}</span>
                           </div>
                           <svg
-                            className={`h-4 w-4 transition-transform duration-300 ${desktopUserMenuOpen ? "rotate-180" : ""}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
+  className={`h-4 w-4 transition-transform duration-300 text-gray-700 dark:text-gray-300 ${desktopUserMenuOpen ? "rotate-180" : ""}`}
+  fill="none"
+  viewBox="0 0 24 24"
+  stroke="currentColor"
+>
+
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
