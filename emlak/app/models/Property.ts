@@ -13,13 +13,29 @@ export interface IProperty extends Document {
     rooms: number;
     bathrooms: number;
     area: number;
+    floors?: number;
+    floor?: number;
+    bedrooms?: number;
+    buildingAge?: number;
+    heating?: string;
     hasGarage: boolean;
     hasGarden: boolean;
     hasPool: boolean;
     isFurnished: boolean;
+    hasAirConditioning?: boolean;
+    hasBalcony?: boolean;
+    hasElevator?: boolean;
+    hasSecurity?: boolean;
+    hasInternet?: boolean;
+    hasSatelliteTV?: boolean;
+    hasFittedKitchen?: boolean;
+    hasParentalBathroom?: boolean;
   };
-  type: string; // apartment, villa, land, commercial, etc.
-  status: string; // for sale, for rent
+  extraFeatures?: string[];
+  type: string; // apartman-dairesi, villa, arsa, dukkan-magaza, etc.
+  status: string; // satilik, kiralik
+  category: string; // konut, is-yeri, arsa, turizm
+  subcategory?: string;
   images: string[];
   createdBy: mongoose.Schema.Types.ObjectId;
   isApproved: boolean;
@@ -69,6 +85,21 @@ const PropertySchema: Schema<IProperty> = new Schema(
         type: Number,
         required: [true, "Alan bilgisi zorunludur"],
       },
+      floors: {
+        type: Number,
+      },
+      floor: {
+        type: Number,
+      },
+      bedrooms: {
+        type: Number,
+      },
+      buildingAge: {
+        type: Number,
+      },
+      heating: {
+        type: String,
+      },
       hasGarage: {
         type: Boolean,
         default: false,
@@ -85,16 +116,58 @@ const PropertySchema: Schema<IProperty> = new Schema(
         type: Boolean,
         default: false,
       },
+      hasAirConditioning: {
+        type: Boolean,
+        default: false,
+      },
+      hasBalcony: {
+        type: Boolean,
+        default: false,
+      },
+      hasElevator: {
+        type: Boolean,
+        default: false,
+      },
+      hasSecurity: {
+        type: Boolean,
+        default: false,
+      },
+      hasInternet: {
+        type: Boolean,
+        default: false,
+      },
+      hasSatelliteTV: {
+        type: Boolean,
+        default: false,
+      },
+      hasFittedKitchen: {
+        type: Boolean,
+        default: false,
+      },
+      hasParentalBathroom: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    extraFeatures: {
+      type: [String],
+      default: [],
     },
     type: {
       type: String,
       required: [true, "Emlak türü zorunludur"],
-      enum: ["apartment", "villa", "land", "commercial", "house"],
     },
     status: {
       type: String,
       required: [true, "İlan durumu zorunludur"],
-      enum: ["for-sale", "for-rent"],
+    },
+    category: {
+      type: String,
+      required: [true, "Kategori alanı zorunludur"],
+      enum: ["konut", "is-yeri", "arsa", "turizm"],
+    },
+    subcategory: {
+      type: String,
     },
     images: {
       type: [String],
@@ -118,5 +191,6 @@ const PropertySchema: Schema<IProperty> = new Schema(
 );
 
 // Eğer önceden tanımlı model yoksa tanımlıyoruz, varsa onu kullanıyoruz:
+delete mongoose.models.Property;
 export const Property: Model<IProperty> =
   mongoose.models.Property || mongoose.model<IProperty>("Property", PropertySchema); 

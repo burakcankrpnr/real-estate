@@ -39,6 +39,8 @@ interface PropertyFormData {
   extraFeatures?: string[];
   type: string;
   status: string;
+  category: string;
+  subcategory?: string;
   images: string[];
   isApproved: boolean;
   isFeatured: boolean;
@@ -81,8 +83,10 @@ const NewPropertyPage = () => {
       hasParentalBathroom: false,
     },
     extraFeatures: [],
-    type: "apartment",
-    status: "for-sale",
+    type: "apartman-dairesi",
+    status: "satilik",
+    category: "konut",
+    subcategory: "",
     images: [],
     isApproved: true,
     isFeatured: false,
@@ -105,6 +109,14 @@ const NewPropertyPage = () => {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser.role === "admin" || parsedUser.role === "moderator") {
           setUser(parsedUser);
+          
+          // Eğer moderatör ise, isApproved'u false olarak ayarla
+          if (parsedUser.role === "moderator") {
+            setForm(prev => ({
+              ...prev,
+              isApproved: false
+            }));
+          }
         } else {
           router.push("/");
         }
@@ -161,6 +173,29 @@ const NewPropertyPage = () => {
     setForm((prev) => ({
       ...prev,
       [name]: checked,
+    }));
+  };
+
+  // Emlak tipine göre kategoriyi otomatik belirle
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+    let category = "";
+
+    // Emlak tipine göre kategori belirleme
+    if (["apartman-dairesi", "daire", "rezidans", "mustakil-ev", "villa", "ciftlik-evi", "yazlik", "prefabrik-ev"].includes(value)) {
+      category = "konut";
+    } else if (["dukkan-magaza", "ofis", "akaryakit-istasyonu", "atolye", "bufe", "ciftlik", "depo-antrepo"].includes(value)) {
+      category = "is-yeri";
+    } else if (["arsa", "tarla", "bag", "bahce", "depo", "zeytinlik"].includes(value)) {
+      category = "arsa";
+    } else if (["otel", "apart-otel", "butik-otel", "motel", "pansiyon", "kamp-yeri", "tatil-koyu"].includes(value)) {
+      category = "turizm";
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      type: value,
+      category: category
     }));
   };
 
@@ -284,7 +319,10 @@ const NewPropertyPage = () => {
       "adres": form.location.address,
       "alan": form.features.area,
       "oda sayısı": form.features.rooms,
-      "banyo sayısı": form.features.bathrooms
+      "banyo sayısı": form.features.bathrooms,
+      "emlak tipi": form.type,
+      "emlak durumu": form.status,
+      "kategori": form.category
     };
     
     // Her bir zorunlu alanı kontrol edip eksik olanları bildirelim
@@ -305,20 +343,49 @@ const NewPropertyPage = () => {
     try {
       setSubmitting(true);
       
-      const formData = {
-        ...form,
+      // Formdan API için veri hazırlama
+      const formDataForAPI = {
+        title: form.title,
+        description: form.description,
         price: parseFloat(form.price),
-        features: {
-          ...form.features,
-          rooms: form.features.rooms ? parseInt(form.features.rooms.toString()) : 0,
-          bathrooms: form.features.bathrooms ? parseInt(form.features.bathrooms.toString()) : 0,
-          area: form.features.area ? parseFloat(form.features.area.toString()) : 0,
-          floors: form.features.floors ? parseInt(form.features.floors?.toString() || '') : undefined,
-          floor: form.features.floor ? parseInt(form.features.floor?.toString() || '') : undefined,
-          bedrooms: form.features.bedrooms ? parseInt(form.features.bedrooms?.toString() || '') : undefined,
-          buildingAge: form.features.buildingAge ? parseInt(form.features.buildingAge?.toString() || '') : undefined,
+        location: {
+          city: form.location.city,
+          district: form.location.district,
+          address: form.location.address,
         },
+        features: {
+          rooms: parseInt(form.features.rooms) || 0,
+          bathrooms: parseInt(form.features.bathrooms) || 0,
+          area: parseFloat(form.features.area) || 0,
+          floors: form.features.floors ? parseInt(form.features.floors) : undefined,
+          floor: form.features.floor ? parseInt(form.features.floor) : undefined,
+          bedrooms: form.features.bedrooms ? parseInt(form.features.bedrooms) : undefined,
+          buildingAge: form.features.buildingAge ? parseInt(form.features.buildingAge) : undefined,
+          heating: form.features.heating || undefined,
+          hasGarage: form.features.hasGarage,
+          hasGarden: form.features.hasGarden,
+          hasPool: form.features.hasPool,
+          isFurnished: form.features.isFurnished,
+          hasAirConditioning: form.features.hasAirConditioning,
+          hasBalcony: form.features.hasBalcony,
+          hasElevator: form.features.hasElevator,
+          hasSecurity: form.features.hasSecurity,
+          hasInternet: form.features.hasInternet,
+          hasSatelliteTV: form.features.hasSatelliteTV,
+          hasFittedKitchen: form.features.hasFittedKitchen,
+          hasParentalBathroom: form.features.hasParentalBathroom,
+        },
+        type: form.type,
+        status: form.status,
+        category: form.category,
+        subcategory: form.subcategory?.trim() || undefined,
+        extraFeatures: form.extraFeatures,
+        images: form.images,
+        isApproved: form.isApproved,
+        isFeatured: form.isFeatured,
       };
+      
+      console.log("API'ye gönderilen veriler:", JSON.stringify(formDataForAPI, null, 2));
       
       const response = await fetch("/api/admin/properties", {
         method: "POST",
@@ -326,21 +393,25 @@ const NewPropertyPage = () => {
           "Content-Type": "application/json",
           "user-id": user._id,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formDataForAPI),
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        console.error("API yanıt hatası:", responseData);
         
         // API'den gelen hata mesajlarını daha iyi göster
-        if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
-          throw new Error(`Eksik alanlar: ${errorData.missingFields.join(', ')}`);
+        if (responseData.missingFields && responseData.missingFields.length > 0) {
+          throw new Error(`Backend'in istediği eksik alanlar: ${responseData.missingFields.join(', ')}`);
         }
         
-        throw new Error(errorData.error || "İlan eklenirken bir hata oluştu");
+        throw new Error(responseData.error || "İlan eklenirken bir hata oluştu");
       }
       
-      toast.success("İlan başarıyla eklendi!");
+      // Başarılı mesajını göster ve detayları konsola yaz
+      console.log("İlan başarıyla eklendi:", responseData);
+      toast.success(`İlan başarıyla eklendi! İlan ID: ${responseData.property._id}`);
       
       // Başarılı işlemden sonra ilanlar sayfasına yönlendir
       setTimeout(() => {
@@ -381,10 +452,10 @@ const NewPropertyPage = () => {
           </p>
         </div>
         <Link
-          href="/Admin/ilanlar"
+          href="/Admin"
           className="rounded-lg bg-gray-200 px-4 py-2 text-gray-700 transition hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
         >
-          İlanlar Sayfasına Dön
+          Admin Paneline Dön
         </Link>
       </div>
 
@@ -456,16 +527,48 @@ const NewPropertyPage = () => {
                   id="type"
                   name="type"
                   value={form.type}
-                  onChange={handleChange}
+                  onChange={handleTypeChange}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   required
                 >
                   <option value="">Seçiniz</option>
-                  <option value="apartment">Daire</option>
-                  <option value="house">Müstakil Ev</option>
-                  <option value="villa">Villa</option>
-                  <option value="land">Arsa</option>
-                  <option value="commercial">İşyeri</option>
+                  <optgroup label="Konut">
+                    <option value="apartman-dairesi">Apartman Dairesi</option>
+                    <option value="daire">Daire</option>
+                    <option value="rezidans">Rezidans</option>
+                    <option value="mustakil-ev">Müstakil Ev</option>
+                    <option value="villa">Villa</option>
+                    <option value="ciftlik-evi">Çiftlik Evi</option>
+                    <option value="yazlik">Yazlık</option>
+                    <option value="prefabrik-ev">Prefabrik Ev</option>
+                  </optgroup>
+                  <optgroup label="İş Yeri">
+                    <option value="dukkan-magaza">Dükkan / Mağaza</option>
+                    <option value="ofis">Ofis</option>
+                    <option value="akaryakit-istasyonu">Akaryakıt İstasyonu</option>
+                    <option value="atolye">Atölye</option>
+                    <option value="bufe">Büfe</option>
+                    <option value="ciftlik">Çiftlik</option>
+                    <option value="depo-antrepo">Depo & Antrepo</option>
+                  </optgroup>
+                  <optgroup label="Arsa">
+                    <option value="arsa">Arsa</option>
+                    <option value="tarla">Tarla</option>
+                    <option value="bag">Bağ</option>
+                    <option value="bahce">Bahçe</option>
+                    <option value="ciftlik">Çiftlik</option>
+                    <option value="depo">Depo</option>
+                    <option value="zeytinlik">Zeytinlik</option>
+                  </optgroup>
+                  <optgroup label="Turizm">
+                    <option value="otel">Otel</option>
+                    <option value="apart-otel">Apart Otel</option>
+                    <option value="butik-otel">Butik Otel</option>
+                    <option value="motel">Motel</option>
+                    <option value="pansiyon">Pansiyon</option>
+                    <option value="kamp-yeri">Kamp Yeri (Mocamp)</option>
+                    <option value="tatil-koyu">Tatil Köyü</option>
+                  </optgroup>
                 </select>
               </div>
               
@@ -482,9 +585,52 @@ const NewPropertyPage = () => {
                   required
                 >
                   <option value="">Seçiniz</option>
-                  <option value="for-sale">Satılık</option>
-                  <option value="for-rent">Kiralık</option>
+                  <option value="satilik">Satılık</option>
+                  <option value="kiralik">Kiralık</option>
                 </select>
+              </div>
+            </div>
+            
+            {/* Kategori Seçimi */}
+            <div className="mb-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Emlak Kategorisi <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  required
+                >
+                  <option value="">Seçiniz</option>
+                  {form.type.includes("apartman-dairesi") || form.type.includes("daire") || form.type.includes("rezidans") || form.type.includes("mustakil-ev") || form.type.includes("villa") || form.type.includes("ciftlik-evi") || form.type.includes("yazlik") || form.type.includes("prefabrik-ev") ? (
+                    <option value="konut">Konut</option>
+                  ) : form.type.includes("dukkan-magaza") || form.type.includes("ofis") || form.type.includes("akaryakit-istasyonu") || form.type.includes("atolye") || form.type.includes("bufe") || form.type.includes("ciftlik") || form.type.includes("depo-antrepo") ? (
+                    <option value="is-yeri">İş Yeri</option>
+                  ) : form.type.includes("arsa") || form.type.includes("tarla") || form.type.includes("bag") || form.type.includes("bahce") || form.type.includes("depo") || form.type.includes("zeytinlik") ? (
+                    <option value="arsa">Arsa</option>
+                  ) : form.type.includes("otel") || form.type.includes("apart-otel") || form.type.includes("butik-otel") || form.type.includes("motel") || form.type.includes("pansiyon") || form.type.includes("kamp-yeri") || form.type.includes("tatil-koyu") ? (
+                    <option value="turizm">Turizm</option>
+                  ) : null}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Emlak tipine göre kategori otomatik belirlenir.</p>
+              </div>
+              <div>
+                <label htmlFor="subcategory" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Alt Kategori
+                </label>
+                <input
+                  type="text"
+                  id="subcategory"
+                  name="subcategory"
+                  value={form.subcategory}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  placeholder="Opsiyonel alt kategori"
+                />
               </div>
             </div>
           </div>
@@ -862,6 +1008,22 @@ const NewPropertyPage = () => {
                   <label htmlFor="isApproved" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     İlanı onaylı olarak yayınla
                   </label>
+                </div>
+              )}
+              
+              {/* Moderatör ise bilgilendirme mesajı göster */}
+              {user && user.role === 'moderator' && (
+                <div className="rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3 text-sm text-blue-700 dark:text-blue-200">
+                      Eklediğiniz ilanlar admin onayına tabi tutulacaktır.
+                    </div>
+                  </div>
                 </div>
               )}
               

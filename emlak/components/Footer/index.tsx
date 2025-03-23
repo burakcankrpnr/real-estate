@@ -25,7 +25,23 @@ const Footer = () => {
             <div className="w-full px-4 md:w-1/2 lg:w-4/12 xl:w-3/12"> 
             <div className="mb-12 max-w-[360px] lg:mb-16"> 
               <Link href="/" className="mb-0 inline-block"> 
-              <Image src="/images/logo/logo.png" alt="logo" className="hidden w-full dark:block" width={140} height={30} /> 
+{/* Light Mode Logo */}
+<Image
+  src="/images/logo/logo.png"
+  alt="logo"
+  className="block dark:hidden w-full"
+  width={140}
+  height={30}
+/>
+
+{/* Dark Mode Logo */}
+<Image
+  src="/images/logo/logo.png"
+  alt="logo"
+  className="hidden dark:block w-full"
+  width={140}
+  height={30}
+/>
               </Link> 
             <p className="dark:text-body-color-dark mb-3 text-base leading-relaxed text-body-color">
                Antalya / Türkiye </p>

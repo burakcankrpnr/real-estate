@@ -148,6 +148,24 @@ const Header = () => {
     }
   }
 
+  // Tüm menüleri kapat
+  const closeAllMenus = () => {
+    // Desktop menüleri kapat
+    setActiveMainMenu(null)
+    setActiveSubMenu(null)
+    setHoverMainMenu(null)
+    setHoverSubMenu(null)
+    
+    // Mobile menüleri kapat
+    setNavbarOpen(false)
+    setMobileMainMenu(null)
+    setMobileSubMenu(null)
+    
+    // Kullanıcı menülerini kapat
+    setDesktopUserMenuOpen(false)
+    setMobileUserMenuOpen(false)
+  }
+
   // Add these new handlers after the existing handleSubMenuClick function
   const handleMainMenuMouseEnter = (index: number) => {
     setHoverMainMenu(index)
@@ -203,6 +221,12 @@ const Header = () => {
     const parts = name.split(" ")
     return parts.map((part) => part.charAt(0).toUpperCase()).join("")
   }
+
+  // Son tıklanan bağlantıyı izlemek için useEffect ekleyin
+  useEffect(() => {
+    // Sayfa değiştiğinde tüm menüleri kapat
+    closeAllMenus();
+  }, [pathName]);
 
   return (
     <>
@@ -272,6 +296,7 @@ const Header = () => {
                                 ? "text-primary dark:text-white"
                                 : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                             }`}
+                            onClick={closeAllMenus}
                           >
                             {menuItem.title}
                           </a>
@@ -283,6 +308,7 @@ const Header = () => {
                                 ? "text-primary dark:text-white"
                                 : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                             }`}
+                            onClick={closeAllMenus}
                           >
                             {menuItem.title}
                           </Link>
@@ -291,7 +317,7 @@ const Header = () => {
                         // Menu item with submenu
                         <>
                           <button
-                            onClick={() => handleMainMenuClick(mainIndex)}
+                            onClick={(e) => handleSubMenuClick(e, mainIndex)}
                             className={`flex items-center justify-between py-6 text-base ${
                               activeMainMenu === mainIndex || hoverMainMenu === mainIndex
                                 ? "text-primary dark:text-white"
@@ -437,6 +463,7 @@ const Header = () => {
                                   ? "text-primary dark:text-white"
                                   : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                               }`}
+                              onClick={closeAllMenus}
                             >
                               {menuItem.title}
                             </a>
@@ -448,6 +475,7 @@ const Header = () => {
                                   ? "text-primary dark:text-white"
                                   : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                               }`}
+                              onClick={closeAllMenus}
                             >
                               {menuItem.title}
                             </Link>
@@ -513,6 +541,7 @@ const Header = () => {
                                                   target="_blank"
                                                   rel="noopener noreferrer"
                                                   className="block py-1 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                                                  onClick={closeAllMenus}
                                                 >
                                                   {child.title}
                                                 </a>
@@ -521,6 +550,7 @@ const Header = () => {
                                                   key={childIndex}
                                                   href={child.path}
                                                   className="block py-1 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                                                  onClick={closeAllMenus}
                                                 >
                                                   {child.title}
                                                 </Link>
@@ -656,7 +686,7 @@ const Header = () => {
                                 >
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
-                                Favorilerim
+                                Favori İlanlarım
                               </Link>
                               
                               {/* Admin paneli bağlantısı - sadece admin ve moderator rolleri için görünür */}

@@ -2,6 +2,11 @@ const menuData = [
   {
     title: "İlanlar",
     path: "/ilanlar",
+    submenu: [
+      { title: "Tüm İlanlar", path: "/ilanlar" },
+      { title: "İlan Ekle", path: "/Admin/ilanlar/yeni" },
+      { title: "İlanlarım", path: "/hesabim/ilanlarim" },
+    ]
   },
   {
     title: "Satılık",

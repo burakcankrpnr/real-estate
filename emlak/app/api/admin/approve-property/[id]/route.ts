@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import Property from "@/models/Property";
-import User from "@/models/User";
+import { dbConnect } from "@/app/lib/dbConnect";
+import { Property } from "@/app/models/Property";
+import { User } from "@/app/models/User";
 import mongoose from "mongoose";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function PUT(
   request: NextRequest,

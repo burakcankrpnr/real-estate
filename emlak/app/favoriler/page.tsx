@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import { toast, Toaster } from "react-hot-toast"
 
 // İlan tipi
 interface Property {
@@ -14,14 +15,21 @@ interface Property {
   location: {
     city: string
     district: string
+    address?: string
   }
   type: string
+  status: string
   category: string
-  bedrooms?: number
-  bathrooms?: number
-  area?: number
+  features: {
+    bedrooms?: number
+    bathrooms?: number
+    area?: number
+    hasGarage?: boolean
+    hasGarden?: boolean
+    hasPool?: boolean
+    isFurnished?: boolean
+  }
   images: string[]
-  features: string[]
   isFeatured: boolean
   isApproved: boolean
   createdAt: string
@@ -38,12 +46,17 @@ const FavorilerPage = () => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        console.log("Kullanıcı bilgisi yüklendi:", parsedUser._id)
+        setUser(parsedUser)
       } catch (error) {
         console.error("Kullanıcı verileri ayrıştırılamadı:", error)
+        toast.error("Kullanıcı bilgisi yüklenemedi")
         router.push("/signin")
       }
     } else {
+      console.log("Kullanıcı oturumu bulunamadı")
+      toast.error("Giriş yapmanız gerekiyor")
       router.push("/signin")
     }
   }, [router])
@@ -56,75 +69,62 @@ const FavorilerPage = () => {
   }, [user])
 
   const fetchFavorites = async () => {
-    // Normalde burada bir API endpoint'i çağrılır
-    // Örnek olarak localStorage'dan favori ilanları alıyoruz
     try {
       setLoading(true)
-      const storedFavorites = localStorage.getItem(`favorites_${user._id}`)
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites))
-      } else {
-        // Örnek favoriler (gerçek projede API'dan gelecek)
-        const dummyFavorites: Property[] = [
-          {
-            _id: "1",
-            title: "Deniz Manzaralı 3+1 Daire",
-            description: "Muhteşem deniz manzaralı, modern tasarımlı, ferah daire",
-            price: 2500000,
-            location: {
-              city: "İstanbul",
-              district: "Kadıköy"
-            },
-            type: "Satılık",
-            category: "Daire",
-            bedrooms: 3,
-            bathrooms: 2,
-            area: 145,
-            images: ["/images/properties/property-1.jpg"],
-            features: ["Otopark", "Havuz", "Güvenlik"],
-            isFeatured: true,
-            isApproved: true,
-            createdAt: new Date().toISOString()
-          },
-          {
-            _id: "2",
-            title: "Bahçeli Müstakil Ev",
-            description: "Geniş bahçeli, doğa ile iç içe, huzurlu bir yaşam alanı",
-            price: 4750000,
-            location: {
-              city: "İzmir",
-              district: "Karşıyaka"
-            },
-            type: "Satılık",
-            category: "Müstakil Ev",
-            bedrooms: 4,
-            bathrooms: 3,
-            area: 220,
-            images: ["/images/properties/property-2.jpg"],
-            features: ["Bahçe", "Otopark", "Şömine"],
-            isFeatured: false,
-            isApproved: true,
-            createdAt: new Date().toISOString()
-          }
-        ]
-        setFavorites(dummyFavorites)
-        localStorage.setItem(`favorites_${user._id}`, JSON.stringify(dummyFavorites))
+      console.log("Favoriler getiriliyor. Kullanıcı ID:", user._id)
+      
+      // API'dan favori ilanları getir
+      const response = await fetch('/api/favorites/user', {
+        headers: {
+          'user-id': user._id
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Favoriler yüklenirken bir hata oluştu')
       }
+      
+      const data = await response.json()
+      console.log("Favoriler alındı:", data)
+      setFavorites(data.favorites || [])
+      
+      if (data.favorites?.length === 0) {
+        console.log("Favori ilan bulunamadı")
+      }
+      
     } catch (error) {
       console.error("Favoriler getirilemedi:", error)
+      toast.error("Favorileriniz yüklenemedi")
+      setFavorites([]) // Hata durumunda boş dizi
     } finally {
       setLoading(false)
     }
   }
 
   // Favorilerden kaldır
-  const removeFavorite = (propertyId: string) => {
-    // Favorilerden kaldır
-    const updatedFavorites = favorites.filter(property => property._id !== propertyId)
-    setFavorites(updatedFavorites)
-    
-    // LocalStorage güncelle (Gerçek uygulamada API çağrısı yapılır)
-    localStorage.setItem(`favorites_${user._id}`, JSON.stringify(updatedFavorites))
+  const removeFavorite = async (propertyId: string) => {
+    try {
+      // API'ya favoriden çıkarma isteği gönder
+      const response = await fetch('/api/favorites', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': user._id
+        },
+        body: JSON.stringify({ propertyId })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Favorilerden çıkarılırken bir hata oluştu')
+      }
+      
+      // Başarılı ise lokal state güncelle
+      const updatedFavorites = favorites.filter(property => property._id !== propertyId)
+      setFavorites(updatedFavorites)
+    } catch (error) {
+      console.error("Favoriden çıkarma hatası:", error)
+      // Hata durumunda kullanıcıya bildirim gösterilebilir
+    }
   }
 
   // Para formatı
@@ -146,6 +146,7 @@ const FavorilerPage = () => {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pt-24 pb-12">
+      <Toaster position="top-right" />
       <div className="container mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Favori İlanlarım</h1>
@@ -208,7 +209,7 @@ const FavorilerPage = () => {
                 
                 {/* İlan Bilgileri */}
                 <div className="p-4">
-                  <Link href={`/ilan/${property._id}`}>
+                  <Link href={`/emlak/${property._id}`}>
                     <h3 className="mb-2 text-xl font-bold text-gray-800 hover:text-primary dark:text-white dark:hover:text-primary">
                       {property.title}
                     </h3>
@@ -228,30 +229,30 @@ const FavorilerPage = () => {
                   
                   {/* Özellikler */}
                   <div className="mb-4 flex justify-between border-t border-b border-gray-100 py-2 dark:border-gray-700">
-                    {property.bedrooms !== undefined && (
+                    {property.features?.bedrooms !== undefined && (
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
-                        {property.bedrooms} Oda
+                        {property.features.bedrooms} Oda
                       </div>
                     )}
                     
-                    {property.bathrooms !== undefined && (
+                    {property.features?.bathrooms !== undefined && (
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        {property.bathrooms} Banyo
+                        {property.features.bathrooms} Banyo
                       </div>
                     )}
                     
-                    {property.area !== undefined && (
+                    {property.features?.area !== undefined && (
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" className="mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
-                        {property.area} m²
+                        {property.features.area} m²
                       </div>
                     )}
                   </div>
@@ -260,7 +261,7 @@ const FavorilerPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-primary">{formatPrice(property.price)}</span>
                     <Link
-                      href={`/ilan/${property._id}`}
+                      href={`/emlak/${property._id}`}
                       className="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
                     >
                       Detaylar

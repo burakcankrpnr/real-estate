@@ -17,3 +17,5 @@ export async function dbConnect() {
     throw new Error("Veritabanına bağlanılamadı!");
   }
 }
+
+export default dbConnect;

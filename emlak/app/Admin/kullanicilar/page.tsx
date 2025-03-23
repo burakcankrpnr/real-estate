@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
+import { Dialog, Transition } from '@headlessui/react';
 
 interface User {
   _id: string;
@@ -21,6 +22,7 @@ const UsersPage = () => {
   const [user, setUser] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userEmailToDelete, setUserEmailToDelete] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
@@ -211,10 +213,15 @@ const UsersPage = () => {
       return;
     }
     
-    // Silme işlemini onaylama
-    if (!confirm(`${userEmail} kullanıcısını silmek istediğinize emin misiniz?`)) {
-      return; // Kullanıcı iptal etti
-    }
+    // Modal'ı açarak silme işlemini başlat
+    setUserToDelete(userId);
+    setUserEmailToDelete(userEmail);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Silme işlemini gerçekleştir
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
       // LocalStorage'dan kullanıcı bilgisini al
@@ -226,7 +233,7 @@ const UsersPage = () => {
         adminId = parsedUser._id;
       }
 
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/users/${userToDelete}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -246,6 +253,11 @@ const UsersPage = () => {
     } catch (error: any) {
       console.error("Kullanıcı silme hatası:", error);
       toast.error("Kullanıcı silinirken bir hata oluştu: " + (error.message || "Bilinmeyen hata"));
+    } finally {
+      // Modalı kapat ve state'i temizle
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      setUserEmailToDelete("");
     }
   };
 
@@ -453,6 +465,68 @@ const UsersPage = () => {
           </table>
         </div>
       )}
+
+      {/* Silme Onay Modalı */}
+      <Transition appear show={isDeleteModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => setIsDeleteModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-800">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900 dark:text-white"
+                  >
+                    Kullanıcıyı Sil
+                  </Dialog.Title>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-300">
+                      <strong>{userEmailToDelete}</strong> kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                      onClick={() => setIsDeleteModalOpen(false)}
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                      onClick={confirmDeleteUser}
+                    >
+                      Sil
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };

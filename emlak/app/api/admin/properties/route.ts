@@ -127,38 +127,25 @@ export async function POST(request: NextRequest) {
     }
 
     const requestBody = await request.json();
+    console.log("API'ye gelen istek verisi:", JSON.stringify(requestBody, null, 2));
     
     const {
       title,
       description,
       price,
-      address,
-      city,
       location,
       type,
       status,
-      roomCount,
-      bathroomCount,
-      area,
-      floorCount,
-      floorNumber,
-      bedroomCount,
-      buildingAge,
-      heatingType,
+      category,
+      subcategory,
       features,
+      extraFeatures,
       images,
       isApproved,
       isFeatured,
     } = requestBody;
 
     // Gerekli alanları kontrol et
-    if (!title || !description || !price || !city || !type || !status) {
-      return NextResponse.json(
-        { error: "Tüm zorunlu alanları doldurunuz" },
-        { status: 400 }
-      );
-    }
-
     // Şema doğrulaması için ek kontroller
     const missingFields: string[] = [];
     
@@ -167,16 +154,17 @@ export async function POST(request: NextRequest) {
     if (!price) missingFields.push("Fiyat");
     
     // Location kontrolü
-    if (!city) missingFields.push("Şehir");
+    if (!location?.city) missingFields.push("Şehir");
     if (!location?.district) missingFields.push("İlçe");
     if (!location?.address) missingFields.push("Adres");
     
     // Features kontrolü  
-    if (!area && (!features || !features.area)) missingFields.push("Alan (m²)");
+    if (!features?.area) missingFields.push("Alan (m²)");
     
     // Diğer zorunlu alanlar
     if (!type) missingFields.push("Emlak Türü");
     if (!status) missingFields.push("İlan Durumu");
+    if (!category) missingFields.push("Kategori");
     
     if (missingFields.length > 0) {
       return NextResponse.json(
@@ -194,21 +182,37 @@ export async function POST(request: NextRequest) {
       description,
       price,
       location: {
-        city,
-        district: location?.district || "",
-        address: location?.address || address || "",
+        city: location.city,
+        district: location.district,
+        address: location.address,
       },
       type,
       status,
+      category,
+      subcategory,
       features: {
-        rooms: roomCount || features?.rooms || 0,
-        bathrooms: bathroomCount || features?.bathrooms || 0,
-        area: area || features?.area || 0,
-        hasGarage: features?.hasGarage || false,
-        hasGarden: features?.hasGarden || false,
-        hasPool: features?.hasPool || false,
-        isFurnished: features?.isFurnished || false,
+        rooms: features.rooms || 0,
+        bathrooms: features.bathrooms || 0,
+        area: features.area || 0,
+        floors: features.floors,
+        floor: features.floor,
+        bedrooms: features.bedrooms,
+        buildingAge: features.buildingAge,
+        heating: features.heating,
+        hasGarage: features.hasGarage || false,
+        hasGarden: features.hasGarden || false,
+        hasPool: features.hasPool || false,
+        isFurnished: features.isFurnished || false,
+        hasAirConditioning: features.hasAirConditioning || false,
+        hasBalcony: features.hasBalcony || false,
+        hasElevator: features.hasElevator || false,
+        hasSecurity: features.hasSecurity || false,
+        hasInternet: features.hasInternet || false,
+        hasSatelliteTV: features.hasSatelliteTV || false,
+        hasFittedKitchen: features.hasFittedKitchen || false,
+        hasParentalBathroom: features.hasParentalBathroom || false,
       },
+      extraFeatures: extraFeatures || [],
       images: images || [],
       // Moderatörler ilan eklerken her zaman onaysız olarak eklenecek
       isApproved: adminUser.role === "admin" ? (isApproved || false) : false,

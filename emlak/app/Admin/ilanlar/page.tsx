@@ -13,16 +13,26 @@ interface Property {
   _id: string;
   title: string;
   price: number;
+  description?: string;
   location: {
-    city: string;
-    district: string;
+    city?: string;
+    district?: string;
+    neighborhood?: string;
+    address?: string;
   };
   type: string;
   status: string;
+  images: string[];
   isApproved: boolean;
   isFeatured: boolean;
   createdAt: string;
-  images: string[];
+  updatedAt?: string;
+  favoriteCount?: number;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
 }
 
 const PropertyListPage = () => {
@@ -30,6 +40,7 @@ const PropertyListPage = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -76,7 +87,7 @@ const PropertyListPage = () => {
       // URL parametreleri oluştur
       const queryParams = new URLSearchParams();
       queryParams.append("page", page.toString());
-      queryParams.append("limit", pagination.limit.toString());
+      queryParams.append("limit", (pagination?.limit ?? 10).toString());
       
       if (filters.approved) {
         queryParams.append("approved", filters.approved);
@@ -84,6 +95,11 @@ const PropertyListPage = () => {
       
       if (filters.featured) {
         queryParams.append("featured", filters.featured);
+      }
+
+      // Arama terimi varsa ekle
+      if (searchTerm) {
+        queryParams.append("search", searchTerm);
       }
       
       // API çağrısı
@@ -129,46 +145,42 @@ const PropertyListPage = () => {
     fetchProperties(page);
   };
   
-  // İlan onaylama/öne çıkarma işlemi
-  const handlePropertyUpdate = async (propertyId: string, updates: any) => {
+  // İlan onaylama işlemi
+  const approveProperty = async (id: string) => {
     try {
-      const response = await fetch(`/api/admin/properties/${propertyId}`, {
-        method: "PATCH",
+      setLoading(true);
+
+      // User ID'yi localStorage'dan al
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+      
+      const response = await fetch(`/api/admin/approve-property/${id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "user-id": user?._id || "",
+          "user-id": userId || "", // Admin kontrolü için user-id eklendi
         },
-        body: JSON.stringify(updates),
       });
-      
-      if (!response.ok) {
-        throw new Error("İlan güncellenemedi");
-      }
-      
-      // Başarılı olduğunda notification göster
-      if (updates.isApproved) {
-        toast.success("İlan başarıyla onaylandı!");
-      } else if (updates.isFeatured === true) {
-        toast.success("İlan başarıyla öne çıkarıldı!");
-      } else if (updates.isFeatured === false) {
-        toast.success("İlan öne çıkarma durumu kaldırıldı!");
+
+      if (response.ok) {
+        toast.success("İlan başarıyla onaylandı! İlan artık ana sayfada görüntülenecek.");
+        // İlanları yenile
+        fetchProperties();
       } else {
-        toast.success("İlan başarıyla güncellendi!");
+        const data = await response.json();
+        toast.error(data.error || "İlan onaylanırken bir hata oluştu.");
       }
-      
-      // İlanları yeniden getir
-      fetchProperties(pagination.page);
-    } catch (err: any) {
-      console.error("İlan güncelleme hatası:", err);
-      setError(err.message || "İlan güncellenirken bir hata oluştu");
-      toast.error(err.message || "İlan güncellenirken bir hata oluştu");
+    } catch (error) {
+      console.error("İlan onaylama hatası:", error);
+      toast.error("İlan onaylanırken bir hata oluştu.");
+    } finally {
+      setLoading(false);
     }
-  };
-  
-  // Silme modal onay işlemi
-  const confirmDelete = (propertyId: string) => {
-    setPropertyToDelete(propertyId);
-    setIsDeleteModalOpen(true);
   };
   
   // İlan silme işlemi
@@ -202,6 +214,79 @@ const PropertyListPage = () => {
       toast.error(err.message || "İlan silinirken bir hata oluştu");
     }
   };
+  
+  const handlePropertyUpdate = async (id: string, updateData: { isApproved?: boolean; isFeatured?: boolean }) => {
+    try {
+      setLoading(true);
+
+      // User ID'yi localStorage'dan al
+      const storedUser = localStorage.getItem("user");
+      let userId = null;
+      
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        userId = parsedUser._id;
+      }
+      
+      const response = await fetch(`/api/admin/properties/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": userId || "", // Admin kontrolü için user-id eklendi
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        // İşlem tipine göre başarı mesajı
+        if (updateData.isApproved !== undefined) {
+          toast.success("İlan onay durumu güncellendi!");
+        } else if (updateData.isFeatured !== undefined) {
+          if (updateData.isFeatured) {
+            toast.success("İlan öne çıkarıldı!");
+          } else {
+            toast.success("İlan normal duruma getirildi!");
+          }
+        } else {
+          toast.success("İlan güncellendi!");
+        }
+        
+        // İlanları yenile
+        fetchProperties();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "İlan güncellenirken bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("İlan güncelleme hatası:", error);
+      toast.error("İlan güncellenirken bir hata oluştu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const confirmDelete = (id: string) => {
+    setPropertyToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+  
+  // Arama fonksiyonu
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+  
+  // Arama işlemi için
+  useEffect(() => {
+    if (user) {
+      // Debounce için timeout oluştur
+      const timeoutId = setTimeout(() => {
+        fetchProperties(1);
+      }, 500);
+      
+      // Cleanup
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, user]);
   
   // Yükleniyor durumu
   if (loading && !properties.length) {
@@ -273,6 +358,17 @@ const PropertyListPage = () => {
             <option value="false">Normal</option>
           </select>
         </div>
+        
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">İlan Ara</label>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearch}
+            placeholder="İlan başlığı, şehir veya tip ara..."
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          />
+        </div>
       </div>
 
       {properties.length === 0 ? (
@@ -284,29 +380,40 @@ const PropertyListPage = () => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   İlan
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Konum
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Fiyat
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   Durum
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Favoriler
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Oluşturan
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Tarih
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   İşlemler
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
               {properties.map((property) => (
-                <tr key={property._id}>
+                <tr key={property._id} 
+                    onClick={() => router.push(`/emlak/${property._id}`)} 
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <td className="whitespace-nowrap px-6 py-4">
-                    <Link href={`/emlak/${property._id}`} className="flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded p-1 cursor-pointer">
-                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
+                    <Link href={`/emlak/${property._id}`} className="flex items-center">
+                      <div className="h-16 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                         {property.images && property.images.length > 0 ? (
                           <img
                             src={property.images[0].startsWith('http') ? property.images[0] : `${window.location.origin}${property.images[0]}`}
@@ -338,35 +445,90 @@ const PropertyListPage = () => {
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-900 dark:text-white">{property.location.city}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{property.location.district}</div>
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm text-gray-900 dark:text-white">{property.location?.city || "Belirtilmemiş"}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{property.location?.district || "Belirtilmemiş"}</div>
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {property.price.toLocaleString("tr-TR")} ₺
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {property.status === "for-sale" ? "Satılık" : "Kiralık"}
-                    </div>
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {property.price ? property.price.toLocaleString("tr-TR") : "0"} ₺
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {property.status === "for-sale" || property.status === "satilik" ? "Satılık" : "Kiralık"}
+                      </div>
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex flex-col space-y-2">
-                      <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${property.isApproved ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"}`}>
-                        {property.isApproved ? "Onaylı" : "Onay Bekliyor"}
-                      </span>
-                      {property.isFeatured && (
-                        <span className="inline-flex rounded-full bg-purple-100 px-2 text-xs font-semibold leading-5 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                          Öne Çıkarılmış
-                        </span>
-                      )}
-                    </div>
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {property.isApproved ? (
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            <svg className="mr-1.5 h-2 w-2 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                              <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Onaylı
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-0.5 text-sm font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                            <svg className="mr-1.5 h-2 w-2 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 8 8">
+                              <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            Onay Bekliyor
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {property.isFeatured ? (
+                          <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                            Öne Çıkarılmış
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                            Normal
+                          </span>
+                        )}
+                      </div>
+                    </Link>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                    <div className="flex space-x-2">
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm text-gray-900 dark:text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {property.favoriteCount || 0}
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {property.createdBy?.name || "Bilinmiyor"}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {property.createdBy?.email || ""}
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <Link href={`/emlak/${property._id}`} className="block">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {new Date(property.createdAt).toLocaleDateString("tr-TR")}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(property.createdAt).toLocaleTimeString("tr-TR")}
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                       {!property.isApproved && (
                         <button
-                          onClick={() => handlePropertyUpdate(property._id, { isApproved: true })}
+                          onClick={() => approveProperty(property._id)}
                           className="rounded-md bg-green-500 px-3 py-1 text-white transition-colors hover:bg-green-600"
+                          title="İlanı Onayla"
                         >
                           Onayla
                         </button>
@@ -388,7 +550,7 @@ const PropertyListPage = () => {
                         </button>
                       )}
                       <Link
-                        href={`/Admin/ilanlar/${property._id}/duzenle`}
+                        href={`/Admin/ilanlar/duzenle/${property._id}`}
                         className="rounded-md bg-blue-500 px-3 py-1 text-white transition-colors hover:bg-blue-600"
                       >
                         Düzenle
