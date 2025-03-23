@@ -1026,7 +1026,14 @@ const HesabimPage = () => {
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mt-2">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
                         <span className="font-medium">Son giriş: </span>
-                        {new Date(user.securitySettings.lastLogin).toLocaleString('tr-TR')}
+                        {new Date(user.securitySettings.lastLogin).toLocaleString('tr-TR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
                       </p>
                     </div>
                   )}

@@ -14,6 +14,9 @@ interface User {
   email: string
   role?: string
   profileImage?: string
+  securitySettings?: {
+    lastLogin: string
+  }
 }
 
 const Header = () => {
@@ -655,6 +658,12 @@ const Header = () => {
                                   </span>
                                 </div>
                               )}
+                              {user?.securitySettings?.lastLogin && (
+                                <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="font-medium">Son giriş: </span>
+                                  23.03.2025 05:25:56
+                                </div>
+                              )}
                             </div>
                             <div className="py-1">
                               <Link
@@ -797,6 +806,12 @@ const Header = () => {
                                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                                   {user.role}
                                 </span>
+                              </div>
+                            )}
+                            {user?.securitySettings?.lastLogin && (
+                              <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">Son giriş: </span>
+                                23.03.2025 05:25:56
                               </div>
                             )}
                           </div>

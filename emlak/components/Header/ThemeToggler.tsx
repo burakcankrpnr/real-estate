@@ -34,8 +34,9 @@ const ThemeToggler = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="rounded-full bg-gray-200 p-2 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+      className="rounded-full bg-gray-200 p-2 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 z-50"
       aria-label="Toggle Dark Mode"
+      style={{ position: "relative" }}
     >
       {isDarkMode ? (
         <svg
