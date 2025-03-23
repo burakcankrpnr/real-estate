@@ -6,7 +6,28 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: string;
-  profileImage?: string;
+  profileImage: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  socialMedia?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  notifications?: {
+    newListings?: boolean;
+    priceDrops?: boolean;
+    messages?: boolean;
+    marketing?: boolean;
+  };
+  securitySettings?: {
+    twoFactorEnabled?: boolean;
+    lastLogin?: Date;
+    loginHistory?: Array<{ip: string, date: Date, device: string}>;
+  };
+  lastNameChange?: number;
+  accountStatus?: string;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -33,6 +54,46 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       default: "",
     },
+    phone: {
+      type: String,
+      default: "",
+    },
+    address: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "",
+    },
+    socialMedia: {
+      facebook: { type: String, default: "" },
+      instagram: { type: String, default: "" },
+      twitter: { type: String, default: "" },
+    },
+    notifications: {
+      newListings: { type: Boolean, default: false },
+      priceDrops: { type: Boolean, default: false },
+      messages: { type: Boolean, default: true },
+      marketing: { type: Boolean, default: false },
+    },
+    securitySettings: {
+      twoFactorEnabled: { type: Boolean, default: false },
+      lastLogin: { type: Date },
+      loginHistory: [{
+        ip: String,
+        date: { type: Date, default: Date.now },
+        device: String
+      }]
+    },
+    lastNameChange: {
+      type: Number,
+    },
+    accountStatus: {
+      type: String,
+      default: "active",
+      enum: ["active", "inactive", "suspended"]
+    }
   },
   { timestamps: true }
 );

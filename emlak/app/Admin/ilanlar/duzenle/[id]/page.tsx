@@ -109,18 +109,42 @@ const PropertyEditPage = ({ params }: { params: { id: string } }) => {
   });
 
   // Formdan gelen verileri işleme
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    console.log(`Form alanı değişti: ${name}, değer: ${value}`);
 
-    if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setForm((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as Record<string, any>),
-          [child]: value,
-        },
-      }));
+    // Nested özellikler için (location, features)
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      
+      if (parent === 'location') {
+        setForm((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            [child]: value,
+          },
+        }));
+      } else if (parent === 'features') {
+        // features içindeki tüm alanlar için tip kontrolü
+        let fieldValue: string | number | boolean = value;
+        
+        // Sayısal değerler için dönüşüm yap
+        if (['rooms', 'bathrooms', 'area', 'floors', 'floor', 'bedrooms', 'buildingAge'].includes(child)) {
+          fieldValue = value === '' ? '' : Number(value);
+        }
+        
+        setForm((prev) => ({
+          ...prev,
+          features: {
+            ...prev.features,
+            [child]: fieldValue,
+          },
+        }));
+        
+        console.log(`Features güncellendi: ${child} = ${fieldValue}`);
+      }
     } else {
       setForm((prev) => ({
         ...prev,
@@ -282,13 +306,19 @@ const PropertyEditPage = ({ params }: { params: { id: string } }) => {
   // Özellik checkbox değişikliklerini işleme
   const handleFeatureCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
+    
+    // features. kısmını ayır
+    const featureName = name.replace('features.', '');
+    
     setForm((prev) => ({
       ...prev,
       features: {
         ...prev.features,
-        [name]: checked,
+        [featureName]: checked,
       },
     }));
+    
+    console.log(`Checkbox güncellendi: ${featureName} = ${checked}`);
   };
 
   // İlan durumu checkbox değişiklikleri
@@ -426,6 +456,8 @@ const PropertyEditPage = ({ params }: { params: { id: string } }) => {
         title: form.title,
         description: form.description,
         price: parseFloat(form.price),
+        city: form.location.city,
+        area: parseFloat(form.features.area) || 0,
         location: {
           city: form.location.city,
           district: form.location.district,

@@ -7,21 +7,38 @@ import bcrypt from "bcryptjs";
 
 export async function GET(request: NextRequest) {
   try {
-    // NextAuth oturumunu kontrol et
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Oturum açmanız gerekiyor." },
-        { status: 401 }
-      );
+    // NextAuth oturumunu veya header'dan gelen kullanıcı ID'sini kontrol et
+    let userId = null;
+    let userData = null;
+    
+    // Header'dan user-id kontrolü
+    const headerUserId = request.headers.get("user-id");
+    if (headerUserId) {
+      userId = headerUserId;
+      
+      // Veritabanı bağlantısını sağla
+      await dbConnect();
+      
+      // ID ile kullanıcıyı bul
+      userData = await User.findById(userId);
+    } else {
+      // NextAuth oturumunu kontrol et
+      const session = await getServerSession(authOptions);
+      if (!session || !session.user) {
+        return NextResponse.json(
+          { error: "Oturum açmanız gerekiyor." },
+          { status: 401 }
+        );
+      }
+      
+      // Veritabanı bağlantısını sağla
+      await dbConnect();
+      
+      // E-posta ile kullanıcıyı bul
+      userData = await User.findOne({ email: session.user.email });
     }
     
-    // Veritabanı bağlantısını sağla
-    await dbConnect();
-    
-    // E-posta ile kullanıcıyı bul
-    const user = await User.findOne({ email: session.user.email });
-    if (!user) {
+    if (!userData) {
       return NextResponse.json(
         { error: "Kullanıcı bulunamadı." },
         { status: 404 }
@@ -31,12 +48,32 @@ export async function GET(request: NextRequest) {
     // Kullanıcı bilgilerini döndür (şifre hariç)
     return NextResponse.json({
       user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        profileImage: user.profileImage,
-        createdAt: user.createdAt,
+        _id: userData._id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        profileImage: userData.profileImage,
+        phone: userData.phone || "",
+        address: userData.address || "",
+        city: userData.city || "",
+        socialMedia: userData.socialMedia || {
+          facebook: "",
+          instagram: "",
+          twitter: ""
+        },
+        notifications: userData.notifications || {
+          newListings: false,
+          priceDrops: false,
+          messages: true,
+          marketing: false
+        },
+        securitySettings: userData.securitySettings || {
+          twoFactorEnabled: false
+        },
+        createdAt: userData.createdAt,
+        lastNameChange: userData.lastNameChange,
+        accountStatus: userData.accountStatus || "active",
+        favoriteListings: userData.favoriteListings || []
       }
     });
   } catch (error) {
@@ -73,13 +110,30 @@ export async function PATCH(request: NextRequest) {
 
     // Güncellenecek verileri al
     const updateData = await request.json();
-    const { name, profileImage, currentPassword, newPassword } = updateData;
+    const { 
+      name, 
+      profileImage, 
+      currentPassword, 
+      newPassword,
+      phone,
+      address,
+      city,
+      socialMedia,
+      notifications,
+      securitySettings
+    } = updateData;
 
     // Güncellenecek alanları hazırla
-    const update: { name?: string; profileImage?: string; password?: string } = {};
+    const update: any = {};
     
     if (name) update.name = name;
     if (profileImage) update.profileImage = profileImage;
+    if (phone !== undefined) update.phone = phone;
+    if (address !== undefined) update.address = address;
+    if (city !== undefined) update.city = city;
+    if (socialMedia) update.socialMedia = socialMedia;
+    if (notifications) update.notifications = notifications;
+    if (securitySettings) update.securitySettings = securitySettings;
 
     // Şifre güncellemesi
     if (currentPassword && newPassword) {
@@ -112,7 +166,27 @@ export async function PATCH(request: NextRequest) {
         email: updatedUser.email,
         role: updatedUser.role,
         profileImage: updatedUser.profileImage,
+        phone: updatedUser.phone || "",
+        address: updatedUser.address || "",
+        city: updatedUser.city || "",
+        socialMedia: updatedUser.socialMedia || {
+          facebook: "",
+          instagram: "",
+          twitter: ""
+        },
+        notifications: updatedUser.notifications || {
+          newListings: false,
+          priceDrops: false,
+          messages: true,
+          marketing: false
+        },
+        securitySettings: updatedUser.securitySettings || {
+          twoFactorEnabled: false
+        },
         createdAt: updatedUser.createdAt,
+        lastNameChange: updatedUser.lastNameChange,
+        accountStatus: updatedUser.accountStatus || "active",
+        favoriteListings: updatedUser.favoriteListings || []
       }
     });
   } catch (error) {

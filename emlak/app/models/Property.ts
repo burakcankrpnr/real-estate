@@ -40,6 +40,7 @@ export interface IProperty extends Document {
   createdBy: mongoose.Schema.Types.ObjectId;
   isApproved: boolean;
   isFeatured: boolean;
+  favoriteCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -185,6 +186,9 @@ const PropertySchema: Schema<IProperty> = new Schema(
     isFeatured: {
       type: Boolean,
       default: false,
+    },
+    favoriteCount: {
+      type: Number,
     },
   },
   { timestamps: true }

@@ -190,13 +190,15 @@ export async function PUT(
     if (!description) missingFields.push("Açıklama");
     if (!price) missingFields.push("Fiyat");
     
-    // Location kontrolü
-    if (!city) missingFields.push("Şehir");
+    // Location kontrolü - şehir ya doğrudan ya da location içinde olmalı
+    const cityValue = city || (location?.city);
+    if (!cityValue) missingFields.push("Şehir");
     if (!location?.district) missingFields.push("İlçe");
     if (!location?.address) missingFields.push("Adres");
     
-    // Features kontrolü  
-    if (!area && (!features || !features.area)) missingFields.push("Alan (m²)");
+    // Features kontrolü - alan bilgisi ya doğrudan ya da features içinde olmalı 
+    const areaValue = area || (features?.area);
+    if (!areaValue) missingFields.push("Alan (m²)");
     
     // Diğer zorunlu alanlar
     if (!type) missingFields.push("Emlak Türü");
@@ -307,6 +309,15 @@ export async function PATCH(
       features: { ...existingProperty.features, ...(updateData.features || {}) }
     };
     
+    // isApproved ve isFeatured değerlerini güncelle (eğer gönderilmişlerse)
+    if (data.hasOwnProperty('isApproved')) {
+      mergedData.isApproved = isApproved;
+    }
+    
+    if (data.hasOwnProperty('isFeatured')) {
+      mergedData.isFeatured = isFeatured;
+    }
+    
     // Şema doğrulaması için ek kontroller
     const missingFields: string[] = [];
     
@@ -315,13 +326,16 @@ export async function PATCH(
     if (!mergedData.price) missingFields.push("Fiyat");
     
     // Location kontrolü
-    if (!mergedData.location?.city) missingFields.push("Şehir");
+    // Şehir ya doğrudan ya da location içinde olmalı
+    const cityValue = mergedData.city || (mergedData.location?.city);
+    if (!cityValue) missingFields.push("Şehir");
     if (!mergedData.location?.district) missingFields.push("İlçe");
     if (!mergedData.location?.address) missingFields.push("Adres");
     
     // Features kontrolü
-    const area = updateData.area || mergedData.features?.area;
-    if (!area) missingFields.push("Alan (m²)");
+    // Alan bilgisi ya doğrudan ya da features içinde olmalı
+    const areaValue = mergedData.area || mergedData.features?.area;
+    if (!areaValue) missingFields.push("Alan (m²)");
     
     // Diğer zorunlu alanlar
     if (!mergedData.type) missingFields.push("Emlak Türü");

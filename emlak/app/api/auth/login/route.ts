@@ -31,6 +31,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Kullanıcının giriş yaptığı tarihi kaydet
+    const securitySettings = user.securitySettings || {};
+    securitySettings.lastLogin = new Date();
+    
+    // Kullanıcı bilgilerini güncelle
+    await User.findByIdAndUpdate(user._id, { 
+      $set: { securitySettings } 
+    });
+
     return NextResponse.json(
       {
         message: "Giriş başarılı!",
@@ -40,6 +49,27 @@ export async function POST(request: NextRequest) {
           email: user.email,
           role: user.role,
           profileImage: user.profileImage,
+          phone: user.phone || "",
+          address: user.address || "",
+          city: user.city || "",
+          socialMedia: user.socialMedia || {
+            facebook: "",
+            instagram: "",
+            twitter: ""
+          },
+          notifications: user.notifications || {
+            newListings: false,
+            priceDrops: false,
+            messages: true,
+            marketing: false
+          },
+          securitySettings: {
+            twoFactorEnabled: user.securitySettings?.twoFactorEnabled || false,
+            lastLogin: securitySettings.lastLogin
+          },
+          accountStatus: user.accountStatus || "active",
+          lastNameChange: user.lastNameChange,
+          favoriteListings: user.favoriteListings || []
         },
       },
       { status: 200 }

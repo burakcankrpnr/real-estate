@@ -37,11 +37,34 @@ export async function POST(request: NextRequest) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Varsayılan bildirim ve güvenlik ayarları
+    const securitySettings = {
+      twoFactorEnabled: false,
+      lastLogin: new Date()
+    };
+    
+    const notifications = {
+      newListings: false,
+      priceDrops: false,
+      messages: true,
+      marketing: false
+    };
+
     // Yeni kullanıcı kaydı oluşturalım
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
+      securitySettings,
+      notifications,
+      phone: "",
+      address: "",
+      city: "",
+      socialMedia: {
+        facebook: "",
+        instagram: "",
+        twitter: ""
+      }
     });
     await newUser.save();
 
@@ -53,7 +76,28 @@ export async function POST(request: NextRequest) {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
-          profileImage: newUser.profileImage,
+          profileImage: newUser.profileImage || "",
+          phone: newUser.phone || "",
+          address: newUser.address || "",
+          city: newUser.city || "",
+          socialMedia: newUser.socialMedia || {
+            facebook: "",
+            instagram: "",
+            twitter: ""
+          },
+          notifications: newUser.notifications || {
+            newListings: false,
+            priceDrops: false,
+            messages: true,
+            marketing: false
+          },
+          securitySettings: newUser.securitySettings || {
+            twoFactorEnabled: false,
+            lastLogin: new Date()
+          },
+          accountStatus: newUser.accountStatus || "active",
+          lastNameChange: newUser.lastNameChange,
+          favoriteListings: newUser.favoriteListings || []
         },
       },
       { status: 201 }

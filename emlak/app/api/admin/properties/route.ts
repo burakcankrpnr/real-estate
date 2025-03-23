@@ -5,6 +5,8 @@ import { User } from "@/app/models/User";
 import { checkAdminRole } from "../../middleware/authMiddleware";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import Favorite from "@/app/models/Favorite";
+import mongoose from "mongoose";
 
 // Admin için tüm ilanları getir (onaylı veya onaysız)
 export async function GET(request: NextRequest) {
@@ -83,9 +85,25 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .populate("createdBy", "name email role")
       .lean();
+      
+    // Favori sayılarını getir
+    const propertyIds = properties.map(p => p._id);
+    const favoriteCounts = await Favorite.aggregate([
+      { $match: { property: { $in: propertyIds } } },
+      { $group: { _id: "$property", count: { $sum: 1 } } }
+    ]);
+    
+    // Favori sayılarını ilanlarla birleştir
+    const propertiesWithFavorites = properties.map(property => {
+      const favoriteData = favoriteCounts.find(f => f._id.toString() === property._id.toString());
+      return {
+        ...property,
+        favoriteCount: favoriteData ? favoriteData.count : 0
+      };
+    });
 
     return NextResponse.json({
-      properties,
+      properties: propertiesWithFavorites,
       pagination: {
         currentPage: page,
         totalPages,

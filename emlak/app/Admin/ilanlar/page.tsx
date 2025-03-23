@@ -228,6 +228,15 @@ const PropertyListPage = () => {
         userId = parsedUser._id;
       }
       
+      // Hemen UI'da göster (API yanıtını beklemeden)
+      setProperties(prevProperties =>
+        prevProperties.map(property => 
+          property._id === id ? 
+            { ...property, ...updateData } : 
+            property
+        )
+      );
+      
       const response = await fetch(`/api/admin/properties/${id}`, {
         method: "PATCH",
         headers: {
@@ -238,6 +247,8 @@ const PropertyListPage = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        
         // İşlem tipine göre başarı mesajı
         if (updateData.isApproved !== undefined) {
           toast.success("İlan onay durumu güncellendi!");
@@ -251,15 +262,37 @@ const PropertyListPage = () => {
           toast.success("İlan güncellendi!");
         }
         
-        // İlanları yenile
-        fetchProperties();
+        // API'den dönen güncel veriyi kullan
+        const updatedProperty = data.property;
+        
+        // State'i güncel veri ile güncelle
+        setProperties(prevProperties =>
+          prevProperties.map(property => 
+            property._id === id ? 
+              { ...property, ...updatedProperty } : 
+              property
+          )
+        );
+        
+        // Sayfa tamamen yenilensin, ama sadece nadiren
+        if (Math.random() < 0.1) { // %10 olasılıkla
+          setTimeout(() => {
+            fetchProperties();
+          }, 2000);
+        }
       } else {
         const data = await response.json();
         toast.error(data.error || "İlan güncellenirken bir hata oluştu.");
+        
+        // Hata durumunda yeniden veri çek (UI'ı düzeltmek için)
+        fetchProperties();
       }
     } catch (error) {
       console.error("İlan güncelleme hatası:", error);
       toast.error("İlan güncellenirken bir hata oluştu.");
+      
+      // Hata durumunda yeniden veri çek
+      fetchProperties();
     } finally {
       setLoading(false);
     }
@@ -462,39 +495,12 @@ const PropertyListPage = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <Link href={`/emlak/${property._id}`} className="block">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {property.isApproved ? (
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            <svg className="mr-1.5 h-2 w-2 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 8 8">
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            Onaylı
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-0.5 text-sm font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                            <svg className="mr-1.5 h-2 w-2 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 8 8">
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            Onay Bekliyor
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {property.isFeatured ? (
-                          <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                            Öne Çıkarılmış
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                            Normal
-                          </span>
-                        )}
-                      </div>
+                      <div className="text-sm text-gray-900 dark:text-white">{property.status === "for-sale" || property.status === "satilik" ? "Satılık" : "Kiralık"}</div>
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <Link href={`/emlak/${property._id}`} className="block">
-                      <div className="text-sm text-gray-900 dark:text-white flex items-center">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
