@@ -231,6 +231,27 @@ const Header = () => {
     closeAllMenus();
   }, [pathName]);
 
+  useEffect(() => {
+    // Tema değişikliğini dinleyerek menüleri yeniden oluştur
+    const handleThemeChange = () => {
+      // Tema değişikliğinde tüm menü durumlarını sıfırla
+      setActiveMainMenu(null);
+      setActiveSubMenu(null);
+      setHoverMainMenu(null);
+      setHoverSubMenu(null);
+      
+      // Zorla yeniden render etmek için
+      setNavbarOpen(navbarOpen);
+    };
+    
+    // Tema değişikliği olayını dinle
+    window.addEventListener('themeChanged', handleThemeChange);
+    
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+    };
+  }, [navbarOpen]);
+
   return (
     <>
       <header
@@ -286,7 +307,7 @@ const Header = () => {
               <div ref={menuRef} className="hidden lg:block" onMouseLeave={handleMainMenuMouseLeave}>
                 <ul className="flex space-x-10">
                   {menuData.map((menuItem, mainIndex) => (
-                    <li key={mainIndex} className="relative" onMouseEnter={() => handleMainMenuMouseEnter(mainIndex)}>
+                    <li key={`menu-${mainIndex}-${sticky ? 'sticky' : 'normal'}`} className="relative" onMouseEnter={() => handleMainMenuMouseEnter(mainIndex)}>
                       {menuItem.path ? (
                         // Regular menu item with direct link
                         menuItem.path.startsWith("http") ? (
@@ -355,7 +376,7 @@ const Header = () => {
                                   // Submenu item with its own submenu
                                   return (
                                     <div
-                                      key={subIndex}
+                                      key={`submenu-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`}
                                       className="relative"
                                       onMouseEnter={() => handleSubMenuMouseEnter(subIndex)}
                                     >
@@ -391,7 +412,7 @@ const Header = () => {
                                           {submenuItem.submenu.map((child, childIndex) =>
                                             child.path.startsWith("http") ? (
                                               <a
-                                                key={childIndex}
+                                                key={`child-${mainIndex}-${subIndex}-${childIndex}-${sticky ? 'sticky' : 'normal'}`}
                                                 href={child.path}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
@@ -401,7 +422,7 @@ const Header = () => {
                                               </a>
                                             ) : (
                                               <Link
-                                                key={childIndex}
+                                                key={`child-${mainIndex}-${subIndex}-${childIndex}-${sticky ? 'sticky' : 'normal'}`}
                                                 href={child.path}
                                                 className="block py-2 px-3 text-sm rounded hover:bg-gray-50 hover:text-primary dark:text-white/70 dark:hover:bg-gray-800 dark:hover:text-white"
                                               >
@@ -417,19 +438,19 @@ const Header = () => {
                                   // Regular submenu item with link
                                   return submenuItem.path.startsWith("http") ? (
                                     <a
-                                      key={subIndex}
+                                      key={`submenu-link-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`}
                                       href={submenuItem.path}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="block py-2.5 px-2 text-sm rounded text-dark hover:bg-gray-50 hover:text-primary dark:text-white/70 dark:hover:bg-gray-800 dark:hover:text-white"
+                                      className="block py-2 px-2 text-sm rounded hover:bg-gray-50 hover:text-primary dark:text-white/70 dark:hover:bg-gray-800 dark:hover:text-white"
                                     >
                                       {submenuItem.title}
                                     </a>
                                   ) : (
                                     <Link
-                                      key={subIndex}
+                                      key={`submenu-link-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`}
                                       href={submenuItem.path}
-                                      className="block py-2.5 px-2 text-sm rounded text-dark hover:bg-gray-50 hover:text-primary dark:text-white/70 dark:hover:bg-gray-800 dark:hover:text-white"
+                                      className="block py-2 px-2 text-sm rounded hover:bg-gray-50 hover:text-primary dark:text-white/70 dark:hover:bg-gray-800 dark:hover:text-white"
                                     >
                                       {submenuItem.title}
                                     </Link>
@@ -453,7 +474,7 @@ const Header = () => {
                 >
                   <ul className="block">
                     {menuData.map((menuItem, mainIndex) => (
-                      <li key={mainIndex} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                      <li key={`mobile-menu-${mainIndex}-${sticky ? 'sticky' : 'normal'}`} className="border-b border-gray-200 last:border-0 dark:border-gray-700">
                         {menuItem.path ? (
                           // Regular menu item with direct link
                           menuItem.path.startsWith("http") ? (
@@ -512,7 +533,7 @@ const Header = () => {
                                   if (submenuItem.submenu) {
                                     // Submenu item with its own submenu
                                     return (
-                                      <div key={subIndex} className="mb-2">
+                                      <div key={`mobile-submenu-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`} className="mb-2">
                                         <button
                                           onClick={(e) => handleMobileSubMenuClick(e, subIndex)}
                                           className="flex w-full items-center justify-between py-1 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
@@ -539,7 +560,7 @@ const Header = () => {
                                             {submenuItem.submenu.map((child, childIndex) =>
                                               child.path.startsWith("http") ? (
                                                 <a
-                                                  key={childIndex}
+                                                  key={`mobile-child-${mainIndex}-${subIndex}-${childIndex}-${sticky ? 'sticky' : 'normal'}`}
                                                   href={child.path}
                                                   target="_blank"
                                                   rel="noopener noreferrer"
@@ -550,7 +571,7 @@ const Header = () => {
                                                 </a>
                                               ) : (
                                                 <Link
-                                                  key={childIndex}
+                                                  key={`mobile-child-${mainIndex}-${subIndex}-${childIndex}-${sticky ? 'sticky' : 'normal'}`}
                                                   href={child.path}
                                                   className="block py-1 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                                                   onClick={closeAllMenus}
@@ -567,7 +588,7 @@ const Header = () => {
                                     // Regular submenu item with link
                                     return submenuItem.path.startsWith("http") ? (
                                       <a
-                                        key={subIndex}
+                                        key={`mobile-submenu-link-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`}
                                         href={submenuItem.path}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -577,7 +598,7 @@ const Header = () => {
                                       </a>
                                     ) : (
                                       <Link
-                                        key={subIndex}
+                                        key={`mobile-submenu-link-${mainIndex}-${subIndex}-${sticky ? 'sticky' : 'normal'}`}
                                         href={submenuItem.path}
                                         className="block py-1 text-sm text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                                       >

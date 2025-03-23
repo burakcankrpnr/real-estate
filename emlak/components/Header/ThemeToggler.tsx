@@ -27,6 +27,11 @@ const ThemeToggler = () => {
         document.documentElement.classList.remove("dark")
         localStorage.setItem("theme", "light")
       }
+      
+      // Tema değişikliği için özel bir olay tetikle
+      const themeChangeEvent = new CustomEvent('themeChanged', { detail: { theme: newMode ? 'dark' : 'light' } });
+      window.dispatchEvent(themeChangeEvent);
+      
       return newMode
     })
   }

@@ -791,7 +791,7 @@ const HesabimPage = () => {
               <form onSubmit={handleSubmit}>
                 <div className="space-y-6">
                   <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-800 dark:text-gray-300">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-800 text:dark dark:text-gray-300">
                   Ad Soyad
                     </label>
                     <input
