@@ -7,6 +7,7 @@ import Link from "next/link";
 const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [pendingCount, setPendingCount] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,6 +24,7 @@ const AdminPanel = () => {
 
           if (parsedUser.role === "admin" || parsedUser.role === "moderator") {
             setUser(parsedUser);
+            fetchPendingCount(parsedUser._id);
           } else {
             console.log("Admin sayfası: Yetki yok, ana sayfaya yönlendiriliyorsunuz");
             router.push("/");
@@ -41,6 +43,29 @@ const AdminPanel = () => {
 
     checkAuth();
   }, [router]);
+
+  // Onay bekleyen ilan sayısını getiren fonksiyon
+  const fetchPendingCount = async (userId: string) => {
+    try {
+      const response = await fetch("/api/admin/properties?pending=true", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "user-id": userId || "",
+        },
+        cache: "no-store",
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.pagination && typeof data.pagination.totalCount === 'number') {
+          setPendingCount(data.pagination.totalCount);
+        }
+      }
+    } catch (error) {
+      console.error("Onay bekleyen ilan sayısı alınırken hata:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -66,7 +91,7 @@ const AdminPanel = () => {
       url: "/Admin/ilanlar",
     },
     {
-      title: "Onay Bekleyen İlanlar",
+      title: pendingCount > 0 ? `Onay Bekleyen İlanlar (${pendingCount})` : "Onay Bekleyen İlanlar",
       description: user.role === "admin" 
         ? "Onay bekleyen tüm ilanları görüntüleyin ve yönetin" 
         : "Eklediğiniz ve onay bekleyen ilanlarınızı görüntüleyin",
@@ -113,11 +138,19 @@ const AdminPanel = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {menuItems.map((item, index) => (
           <Link href={item.url} key={index}>
-            <div className="flex h-full flex-col items-center justify-center rounded-lg bg-white p-8 text-center shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-800 dark:shadow-gray-900/30">
+            <div className={`flex h-full flex-col items-center justify-center rounded-lg ${
+              item.title.includes('Onay Bekleyen İlanlar') && pendingCount > 0 
+                ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-primary'
+                : 'bg-white dark:bg-gray-800'
+            } p-8 text-center shadow-lg transition-all duration-300 hover:shadow-xl dark:shadow-gray-900/30`}>
               <div className="mb-4 rounded-full bg-blue-50 p-4 dark:bg-blue-900/20">
                 {item.icon}
               </div>
-              <h2 className="mb-2 text-xl font-bold text-gray-900 text-dark dark:text-white">{item.title}</h2>
+              <h2 className={`mb-2 text-xl font-bold text-gray-900 text-dark dark:text-white ${
+                item.title.includes('Onay Bekleyen İlanlar') && pendingCount > 0 
+                  ? 'text-primary dark:text-primary'
+                  : ''
+              }`}>{item.title}</h2>
               <p className="text-gray-500 dark:text-gray-400">{item.description}</p>
             </div>
           </Link>

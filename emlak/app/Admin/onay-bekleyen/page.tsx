@@ -278,7 +278,12 @@ const PendingApprovalsPage = () => {
       
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Onay Bekleyen İlanlar</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Onay Bekleyen İlanlar</h1>
+            <span className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-3 py-1 text-sm font-medium text-white">
+              {properties.length} ilan
+            </span>
+          </div>
           <p className="text-gray-600 dark:text-gray-300">
             {user?.role === "admin" 
               ? "Sisteme eklenen ve onay bekleyen tüm ilanlar."
