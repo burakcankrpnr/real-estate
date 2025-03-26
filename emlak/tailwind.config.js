@@ -27,7 +27,7 @@ module.exports = {
         // Temel renkler
         current: "currentColor",
         transparent: "transparent",
-        white: "#FFFFFF",
+        white: "#F5F5F5",  // Beyazı biraz daha kırarak ayarladık
         black: "#121723",
         dark: "#1D2430",
 
