@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // İçerik dizinleri
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -14,46 +15,68 @@ module.exports = {
 
     screens: {
       xs: "450px",
-      // => @media (min-width: 450px) { ... }
-
       sm: "575px",
-      // => @media (min-width: 576px) { ... }
-
       md: "768px",
-      // => @media (min-width: 768px) { ... }
-
       lg: "992px",
-      // => @media (min-width: 992px) { ... }
-
       xl: "1200px",
-      // => @media (min-width: 1200px) { ... }
-
       "2xl": "1400px",
-      // => @media (min-width: 1400px) { ... }
     },
+
     extend: {
       colors: {
+        // Temel renkler
         current: "currentColor",
         transparent: "transparent",
         white: "#FFFFFF",
         black: "#121723",
         dark: "#1D2430",
+
+        /**
+         * "primary" rengini canlı, göz alıcı
+         * ve emlak sitesi hissiyatına uygun
+         * parlak bir ton olarak ayarlıyoruz.
+         * CTA (Call To Action) vb. yerlerde
+         * doğrudan kullanılabilir.
+         */
         primary: {
-          DEFAULT: "#2563eb",
-          light: "#60a5fa",
-          dark: "#1d4ed8",
+          DEFAULT: "#FBB040", // Öne çıkaracağınız asıl ton
+          light: "#FFD27A",   // Hover veya açık ton versiyonu
+          dark: "#E0A038",    // Daha koyu hali
         },
+
+        /**
+         * "secondary" rengini, "primary"yi
+         * tamamlayacak daha kontrast bir tonda
+         * seçiyoruz. Buton vb. ikincil alanlarda 
+         * kullanılabilir.
+         */
         secondary: {
-          DEFAULT: "#f59e0b",
-          light: "#fbbf24",
-          dark: "#d97706",
+          DEFAULT: "#1E3A8A", // Mavi ton (kontrast oluşturur)
+          light: "#3B5ABF",
+          dark: "#172B6A",
         },
-        yellow: "#FBB040",
-        "body-color": "#788293",
+
+        /**
+         * İsteğe bağlı ek renk ya da "accent" rengi
+         * ekleyebilirsiniz. Örnek: Güven, yeşil vb. 
+         * vurgular için kullanılabilir.
+         */
+        accent: {
+          DEFAULT: "#10B981", // Örneğin yeşil ton
+          light: "#34D399",
+          dark: "#059669",
+        },
+
+        /**
+         * Geri kalan nötr tonlar (metin, arkaplan vb.)
+         * Site genelinde bütünlüğü korumak adına
+         * çok hafif değiştirildi.
+         */
+        "body-color": "#5A6473",
         "body-color-dark": "#959CB1",
         "gray-dark": "#1E232E",
-        "gray-light": "#F0F2F9",
-        stroke: "#E3E8EF",
+        "gray-light": "#F8F9FB",
+        stroke: "#E5E7EB",
         "stroke-dark": "#353943",
         "bg-color-dark": "#171C28",
       },
@@ -72,9 +95,12 @@ module.exports = {
         "btn-hover": "0px 1px 2px rgba(0, 0, 0, 0.15)",
         "btn-light": "0px 1px 2px rgba(0, 0, 0, 0.1)",
       },
+
       dropShadow: {
         three: "0px 5px 15px rgba(6, 8, 15, 0.05)",
       },
+
+      // Yazı tipi ayarları
       fontFamily: {
         sans: ["Inter", "sans-serif"],
       },
