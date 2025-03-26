@@ -10,10 +10,22 @@ export interface IUser extends Document {
   phone?: string;
   address?: string;
   city?: string;
+  // Danışmanlar için ek alanlar
+  bio?: string;
+  specialization?: string[];
+  experience?: number;
+  languages?: string[];
+  rating?: number;
+  propertySold?: number;
+  website?: string;
+  licenseNumber?: string;
   socialMedia?: {
     facebook?: string;
     instagram?: string;
     twitter?: string;
+    linkedin?: string;
+    youtube?: string;
+    tiktok?: string;
   };
   notifications?: {
     newListings?: boolean;
@@ -66,10 +78,44 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       default: "",
     },
+    // Danışmanlar için ek alanlar
+    bio: {
+      type: String,
+      default: "",
+    },
+    specialization: [{
+      type: String,
+    }],
+    experience: {
+      type: Number,
+      default: 0,
+    },
+    languages: [{
+      type: String,
+    }],
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    propertySold: {
+      type: Number,
+      default: 0,
+    },
+    website: {
+      type: String,
+      default: "",
+    },
+    licenseNumber: {
+      type: String,
+      default: "",
+    },
     socialMedia: {
       facebook: { type: String, default: "" },
       instagram: { type: String, default: "" },
       twitter: { type: String, default: "" },
+      linkedin: { type: String, default: "" },
+      youtube: { type: String, default: "" },
+      tiktok: { type: String, default: "" },
     },
     notifications: {
       newListings: { type: Boolean, default: false },
