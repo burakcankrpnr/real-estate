@@ -132,8 +132,8 @@ export default function DanismanlarPage() {
                 key={advisor._id} 
                 className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 duration-300"
               >
-                <div className="relative h-80 w-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-                  {advisor.profileImage ? (
+<div className="relative h-80 w-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+{advisor.profileImage ? (
                     <Image
                       src={advisor.profileImage}
                       alt={advisor.name}
@@ -278,12 +278,7 @@ export default function DanismanlarPage() {
                       )}
                     </div>
                   </div>
-                  
-                  {/* Biyografi - Her zaman göster */}
-                  <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                    <p className="font-medium mb-1">Biyografi:</p>
-                    <p className="line-clamp-2">{advisor.bio || <span className="text-gray-400">Henüz girilmemiş</span>}</p>
-                  </div>
+
                   
                   {/* Sosyal medya linkleri - Her zaman göster */}
                   <div className="mt-3 flex justify-between items-center">

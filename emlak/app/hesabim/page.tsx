@@ -20,6 +20,9 @@ interface User {
     facebook?: string
     instagram?: string
     twitter?: string
+    linkedin?: string
+    youtube?: string
+    tiktok?: string
   }
   role?: string
   profileImage?: string
@@ -37,6 +40,12 @@ interface User {
     lastLogin?: number
     loginHistory?: Array<{ip: string, date: number, device: string}>
   }
+  bio?: string
+  licenseNumber?: string
+  experience?: number
+  specialization?: string
+  languages?: string
+  website?: string
 }
 
 const HesabimPage = () => {
@@ -51,9 +60,18 @@ const HesabimPage = () => {
     facebook: "",
     instagram: "",
     twitter: "",
+    linkedin: "",
+    youtube: "",
+    tiktok: "",
+    bio: "",
+    licenseNumber: "",
+    experience: 0,
+    specialization: "",
+    languages: "",
+    website: "",
     newPassword: "",
     confirmPassword: "",
-    currentPassword: "", // Mevcut şifre ekledik
+    currentPassword: "",
     notifyNewListings: false,
     notifyPriceDrops: false,
     notifyMessages: false,
@@ -95,6 +113,15 @@ const HesabimPage = () => {
           facebook: userData.socialMedia?.facebook || "",
           instagram: userData.socialMedia?.instagram || "",
           twitter: userData.socialMedia?.twitter || "",
+          linkedin: userData.socialMedia?.linkedin || "",
+          youtube: userData.socialMedia?.youtube || "",
+          tiktok: userData.socialMedia?.tiktok || "",
+          bio: userData.bio || "",
+          licenseNumber: userData.licenseNumber || "",
+          experience: userData.experience || 0,
+          specialization: userData.specialization ? userData.specialization.join(", ") : "",
+          languages: userData.languages ? userData.languages.join(", ") : "",
+          website: userData.website || "",
           newPassword: "",
           confirmPassword: "",
           currentPassword: "",
@@ -144,6 +171,15 @@ const HesabimPage = () => {
             facebook: userData.socialMedia?.facebook || "",
             instagram: userData.socialMedia?.instagram || "",
             twitter: userData.socialMedia?.twitter || "",
+            linkedin: userData.socialMedia?.linkedin || "",
+            youtube: userData.socialMedia?.youtube || "",
+            tiktok: userData.socialMedia?.tiktok || "",
+            bio: userData.bio || "",
+            licenseNumber: userData.licenseNumber || "",
+            experience: userData.experience || 0,
+            specialization: userData.specialization ? userData.specialization.join(", ") : "",
+            languages: userData.languages ? userData.languages.join(", ") : "",
+            website: userData.website || "",
             newPassword: "",
             confirmPassword: "",
             currentPassword: "",
@@ -421,46 +457,59 @@ const HesabimPage = () => {
   // Profil güncelleme
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // İsim değişikliği kontrolü
-    if (user && formData.name !== user.name) {
-      if (!canChangeName()) {
-        toast.error("İsminizi 1 saat içinde sadece bir kez değiştirebilirsiniz")
-        return
-      }
-    }
-
-    // Şifre değiştiriliyorsa kontrol et
+    
+    // Şifre değişikliği varsa validate et
     if (formData.newPassword) {
       if (!validatePasswordChange()) {
         return
       }
     }
-
+    
+    // İsim değişikliği için kontrol
+    const nameChanged = user && formData.name !== user.name
+    if (nameChanged && !canChangeName()) {
+      toast.error("İsim değişikliği için 30 gün beklemeniz gerekiyor")
+      return
+    }
+    
     try {
-      // Profil fotoğrafını yükle
+      // Profil fotoğrafı yüklenmesi gerekiyorsa yükle
       let uploadedImageUrl: string | null = null
-      if (selectedFile) {
-        uploadedImageUrl = croppedImage || await uploadProfileImage()
+      if (croppedImage) {
+        uploadedImageUrl = await uploadProfileImage()
       }
-
+      
+      if (!user) return
+      
+      // Alanları hazırla
+      const specialization = formData.specialization 
+        ? formData.specialization.split(',').map(item => item.trim()) 
+        : [];
+      
+      const languages = formData.languages 
+        ? formData.languages.split(',').map(item => item.trim()) 
+        : [];
+      
       // Kullanıcı bilgilerini güncelle
-      if (!user) return;
-      
-      // İsim değişikliği zaman damgası
-      const nameChanged = formData.name !== user.name
-      
-      const updatedUser: User = {
-        _id: user._id,
+      const updatedUser = {
+        ...user,
         name: formData.name,
-        email: formData.email,
         phone: formData.phone,
         address: formData.address,
         city: formData.city,
+        bio: formData.bio,
+        licenseNumber: formData.licenseNumber,
+        experience: parseInt(formData.experience.toString()) || 0,
+        specialization,
+        languages,
+        website: formData.website,
         socialMedia: {
           facebook: formData.facebook,
           instagram: formData.instagram,
           twitter: formData.twitter,
+          linkedin: formData.linkedin,
+          youtube: formData.youtube,
+          tiktok: formData.tiktok,
         },
         notifications: {
           newListings: formData.notifyNewListings,
@@ -469,14 +518,10 @@ const HesabimPage = () => {
           marketing: formData.notifyMarketing,
         },
         securitySettings: {
-          ...user.securitySettings,
           twoFactorEnabled: formData.twoFactorEnabled,
         },
-        role: user.role,
         profileImage: uploadedImageUrl || user.profileImage,
-        accountStatus: user.accountStatus || "active",
         lastNameChange: nameChanged ? Date.now() : user.lastNameChange,
-        favoriteListings: user.favoriteListings || [],
       }
 
       // API aracılığıyla kullanıcı bilgilerini güncelle
@@ -496,6 +541,9 @@ const HesabimPage = () => {
               facebook: formData.facebook,
               instagram: formData.instagram,
               twitter: formData.twitter,
+              linkedin: formData.linkedin,
+              youtube: formData.youtube,
+              tiktok: formData.tiktok,
             },
             notifications: {
               newListings: formData.notifyNewListings,
@@ -508,6 +556,12 @@ const HesabimPage = () => {
             },
             profileImage: uploadedImageUrl || user.profileImage,
             lastNameChange: nameChanged ? Date.now() : user.lastNameChange,
+            bio: formData.bio,
+            licenseNumber: formData.licenseNumber,
+            experience: parseInt(formData.experience.toString()) || 0,
+            specialization,
+            languages,
+            website: formData.website,
           })
         });
 
@@ -924,6 +978,178 @@ const HesabimPage = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Danışman ek sosyal medya alanları */}
+                  {user.role === 'admin' || user.role === 'moderator' ? (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div>
+                        <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          LinkedIn
+                        </label>
+                        <div className="mt-1 flex rounded-md shadow-sm">
+                          <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                            linkedin.com/in/
+                          </span>
+                          <input
+                            type="text"
+                            id="linkedin"
+                            name="linkedin"
+                            value={formData.linkedin}
+                            onChange={handleChange}
+                            className="block w-full flex-1 rounded-none rounded-r-md border border-gray-300 bg-white px-3 py-2 focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="youtube" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          YouTube
+                        </label>
+                        <div className="mt-1 flex rounded-md shadow-sm">
+                          <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                            youtube.com/
+                          </span>
+                          <input
+                            type="text"
+                            id="youtube"
+                            name="youtube"
+                            value={formData.youtube}
+                            onChange={handleChange}
+                            className="block w-full flex-1 rounded-none rounded-r-md border border-gray-300 bg-white px-3 py-2 focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="tiktok" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          TikTok
+                        </label>
+                        <div className="mt-1 flex rounded-md shadow-sm">
+                          <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                            tiktok.com/@
+                          </span>
+                          <input
+                            type="text"
+                            id="tiktok"
+                            name="tiktok"
+                            value={formData.tiktok}
+                            onChange={handleChange}
+                            className="block w-full flex-1 rounded-none rounded-r-md border border-gray-300 bg-white px-3 py-2 focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                  
+                  {/* Danışman profil bilgileri - sadece danışmanlar ve admin için göster */}
+                  {user.role === 'admin' || user.role === 'moderator' ? (
+                    <>
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Danışman Profil Bilgileri</h3>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          Bu bilgiler müşterilerin sizi danışman olarak değerlendirmesine yardımcı olacaktır.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Hakkımda / Biyografi
+                        </label>
+                        <textarea
+                          id="bio"
+                          name="bio"
+                          rows={4}
+                          value={formData.bio}
+                          onChange={handleChange}
+                          placeholder="Deneyiminiz, uzmanlık alanlarınız ve çalışma tarzınız hakkında kısa bir tanıtım yazısı ekleyin."
+                          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label htmlFor="website" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Kişisel Web Sitesi
+                          </label>
+                          <div className="mt-1 flex rounded-md shadow-sm">
+                            <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                              https://
+                            </span>
+                            <input
+                              type="text"
+                              id="website"
+                              name="website"
+                              value={formData.website}
+                              onChange={handleChange}
+                              placeholder="örnek: mywebsite.com"
+                              className="block w-full flex-1 rounded-none rounded-r-md border border-gray-300 bg-white px-3 py-2 focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Lisans Numarası
+                          </label>
+                          <input
+                            type="text"
+                            id="licenseNumber"
+                            name="licenseNumber"
+                            value={formData.licenseNumber}
+                            onChange={handleChange}
+                            placeholder="Emlak danışmanlığı lisans numaranızı girin"
+                            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label htmlFor="experience" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Deneyim (Yıl)
+                          </label>
+                          <input
+                            type="number"
+                            id="experience"
+                            name="experience"
+                            min="0"
+                            max="50"
+                            value={formData.experience}
+                            onChange={handleChange}
+                            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="languages" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Bildiğiniz Diller
+                          </label>
+                          <input
+                            type="text"
+                            id="languages"
+                            name="languages"
+                            value={formData.languages}
+                            onChange={handleChange}
+                            placeholder="Türkçe, İngilizce, Almanca (virgülle ayırın)"
+                            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Uzmanlık Alanları
+                        </label>
+                        <input
+                          type="text"
+                          id="specialization"
+                          name="specialization"
+                          value={formData.specialization}
+                          onChange={handleChange}
+                          placeholder="Konut Satışı, Ticari Gayrimenkul, Lüks Konutlar (virgülle ayırın)"
+                          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                    </>
+                  ) : null}
                   
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">Bildirim Tercihleri</h3>
