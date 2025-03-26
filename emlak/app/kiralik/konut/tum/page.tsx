@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 async function getProperties() {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/properties?category=konut&status=kiralik&limit=24`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/properties?type=konut&status=kiralik&limit=24`,
       { next: { revalidate: 3600 } }
     );
     
