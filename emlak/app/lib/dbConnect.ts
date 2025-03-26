@@ -1,6 +1,11 @@
 // app/lib/dbConnect.ts
 import mongoose from "mongoose";
 
+// Bağlantıdan önce tüm model şemalarının yüklenmesini sağlamak için modelleri import ediyoruz
+import "../models/User";
+import "../models/Property";
+import "../models/Favorite";
+
 let isConnected = false; // globalde tutulacak bir flag
 
 export async function dbConnect() {

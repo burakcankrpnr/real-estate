@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/app/lib/dbConnect";
 import { Property } from "@/app/models/Property";
+import { User } from "@/app/models/User";
 
 // Tüm onaylanmış ilanları getir
 export async function GET(request: NextRequest) {
   try {
     await dbConnect();
+    
+    // User modelini kullanmadan önce kaydolduğundan emin olmak için boş yere import ediyoruz
+    // Bu, mongoose'un User modelini kaydetmesini sağlar
     
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");

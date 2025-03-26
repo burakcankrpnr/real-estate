@@ -195,6 +195,5 @@ const PropertySchema: Schema<IProperty> = new Schema(
 );
 
 // Eğer önceden tanımlı model yoksa tanımlıyoruz, varsa onu kullanıyoruz:
-delete mongoose.models.Property;
 export const Property: Model<IProperty> =
   mongoose.models.Property || mongoose.model<IProperty>("Property", PropertySchema); 
