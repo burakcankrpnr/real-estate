@@ -56,10 +56,21 @@ export async function GET(request: NextRequest) {
         phone: userData.phone || "",
         address: userData.address || "",
         city: userData.city || "",
+        bio: userData.bio || "",
+        specialization: userData.specialization || [],
+        experience: userData.experience || 0,
+        languages: userData.languages || [],
+        rating: userData.rating || 0,
+        propertySold: userData.propertySold || 0,
+        website: userData.website || "",
+        licenseNumber: userData.licenseNumber || "",
         socialMedia: userData.socialMedia || {
           facebook: "",
           instagram: "",
-          twitter: ""
+          twitter: "",
+          linkedin: "",
+          youtube: "",
+          tiktok: ""
         },
         notifications: userData.notifications || {
           newListings: false,
@@ -118,9 +129,16 @@ export async function PATCH(request: NextRequest) {
       phone,
       address,
       city,
+      bio,
+      specialization,
+      experience,
+      languages,
+      website,
+      licenseNumber,
       socialMedia,
       notifications,
-      securitySettings
+      securitySettings,
+      lastNameChange
     } = updateData;
 
     // Güncellenecek alanları hazırla
@@ -131,9 +149,16 @@ export async function PATCH(request: NextRequest) {
     if (phone !== undefined) update.phone = phone;
     if (address !== undefined) update.address = address;
     if (city !== undefined) update.city = city;
+    if (bio !== undefined) update.bio = bio;
+    if (specialization !== undefined) update.specialization = specialization;
+    if (experience !== undefined) update.experience = experience;
+    if (languages !== undefined) update.languages = languages;
+    if (website !== undefined) update.website = website;
+    if (licenseNumber !== undefined) update.licenseNumber = licenseNumber;
     if (socialMedia) update.socialMedia = socialMedia;
     if (notifications) update.notifications = notifications;
     if (securitySettings) update.securitySettings = securitySettings;
+    if (lastNameChange) update.lastNameChange = lastNameChange;
 
     // Şifre güncellemesi
     if (currentPassword && newPassword) {
@@ -169,10 +194,21 @@ export async function PATCH(request: NextRequest) {
         phone: updatedUser.phone || "",
         address: updatedUser.address || "",
         city: updatedUser.city || "",
+        bio: updatedUser.bio || "",
+        specialization: updatedUser.specialization || [],
+        experience: updatedUser.experience || 0,
+        languages: updatedUser.languages || [],
+        rating: updatedUser.rating || 0,
+        propertySold: updatedUser.propertySold || 0,
+        website: updatedUser.website || "",
+        licenseNumber: updatedUser.licenseNumber || "",
         socialMedia: updatedUser.socialMedia || {
           facebook: "",
           instagram: "",
-          twitter: ""
+          twitter: "",
+          linkedin: "",
+          youtube: "",
+          tiktok: ""
         },
         notifications: updatedUser.notifications || {
           newListings: false,

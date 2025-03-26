@@ -32,7 +32,10 @@ export async function PATCH(request: NextRequest) {
     const allowedFields = [
       'name', 'phone', 'address', 'city', 'socialMedia', 
       'notifications', 'securitySettings', 'profileImage',
-      'lastNameChange'
+      'lastNameChange',
+      // Yeni eklenen alanlar
+      'bio', 'specialization', 'experience', 'languages', 
+      'website', 'licenseNumber'
     ];
     
     const updateObject = {};
